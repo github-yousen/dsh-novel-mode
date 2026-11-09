@@ -279,5 +279,21 @@ check('engines.dsh in catalog/index matches package.json', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
   eq(idx.plugins[0].versions[0].engines.dsh, pkg.engines.dsh);
 });
+// PM R3-O7: guard the publication artifacts against URL rot / removal.
+check('catalog declares a GitHub Release tarball and a real GitHub-hosted raster icon', () => {
+  const yml = texts['market/data/plugins/github-yousen__dsh-novel-mode.yml'] ?? '';
+  match(yml, /^tarball:\s*https:\/\/github\.com\/github-yousen\/dsh-novel-mode\/releases\/download\/v[\d.]+\/dsh-novel-mode\.tgz\s*$/m, 'pinned GitHub Release .tgz');
+  match(yml, /^icon:\s*https:\/\/raw\.githubusercontent\.com\/github-yousen\/dsh-novel-mode\/main\/assets\/icon-180\.png\s*$/m, 'GitHub-hosted raster icon');
+  ok(exists(join(ROOT, 'assets/icon-180.png')), 'icon-180.png exists');
+  ok(exists(join(ROOT, 'assets/screenshot-1.png')), 'screenshot-1.png exists');
+  const shots = readJson(join(ROOT, 'screenshots.json'));
+  ok(Array.isArray(shots) && shots.some((s) => exists(join(ROOT, s))), 'screenshots.json references resolve');
+});
+// PM R3-O6: the local example snippet pins the same stable code commit as the
+// hosted index so the two artifacts cannot silently diverge.
+check('index-snippet commit is the stable published v2.0.0 code commit', () => {
+  const idx = readJson(join(ROOT, 'market/index-snippet.json'));
+  match(idx.plugins[0].versions[0].source.commit, /^[0-9a-f]{40}$/, '40-hex SHA');
+});
 
 finish(SUITE);
