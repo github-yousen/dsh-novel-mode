@@ -197,7 +197,7 @@
 |---|---:|---|---|
 | `.dsh/skills/site-fanqie/fanqienovel_auth.json`（`.codebuddy` 同名副本） | 2607 | **真实账号凭据**：完整 `cookie`（含 `sessionid` / `sid_guard` / `passport_csrf_token` / `passport_mfa_token` / `uid_tt` / `ttwid` / `s_v_web_id=verify_...` 等）、`ms_token`、`a_bogus`、`secsdk_token`（x-secsdk-csrf-token） | **EXCLUDE**；改发 `fanqienovel_auth.json.template`（空 `cookie`/`ms_token`/`a_bogus`/`secsdk_token` + `note` 字段说明如何 F12 抓取）。`api_client.py` 的 `load_auth()` 已支持读空值报错 + 环境变量 `FANQIENOVEL_DATA_DIR` 覆盖目录 |
 | `.codebuddy/scripts/fanqie-auth.json` / `.dsh/scripts/fanqie-auth.json` | 386 | **真实凭据**：`msToken`、`session_id`、`device_id`、`user_id`、`web_id` | **EXCLUDE**（或空值模板） |
-| `.dsh/skills/site-fanqie/publish_result.json`（`.codebuddy` 同名副本） | 2391 | **真实发布结果/业务数据**：书名《全校最差班，藏了个省状元》、`book_id` 7677483242244541502、`item_id` 7680561916242035262、章节发布状态 | **EXCLUDE**（运行期生成物，非资产） |
+| `.dsh/skills/site-fanqie/publish_result.json`（`.codebuddy` 同名副本） | 2391 | **真实发布结果/业务数据**：书名、book_id、item_id、章节发布状态（数值已从公开文档中略去） | **EXCLUDE**（运行期生成物，非资产） |
 | `.dsh/skills/site-fanqie/package-lock.json` | 939 | lockfile（含依赖解析信息），非源码 | **EXCLUDE**（`package.json` 已声明 crypto-js / bignumber.js，安装时重生成） |
 | 各 `__pycache__/*.pyc`（`scripts/`、`skills/site-fanqie/scripts/`、`skills/site-fanqie/novel-downloader/scripts/`、`skills/site-fanqienovel/scripts/`） | 若干 | 编译缓存 / 迁移残留 | **EXCLUDE** |
 | `.codebuddy/skills/site-fanqienovel/`（仅 1 个 `.pyc`） | — | 迁移残留空壳 | **EXCLUDE** |
