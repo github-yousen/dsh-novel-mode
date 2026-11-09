@@ -52,8 +52,21 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 
 然后**刷新页面**，打开模式下拉框选「小说模式」，说出你想写什么，剩下的交给引擎。
 
+### 30 秒上手
+
+```text
+你：帮我从零搭一个都市悬疑的世界观，再写第 1 章
+模型 → novel_orchestrate(start → select-branch constitution → …)
+你只会看到：阶段：constitution · 就绪   →   阶段：write · 第 1 章 · 就绪
+```
+
+这一行状态背后，引擎已经选好分支、检查入口产物、跑过设计稿/正文校验脚本、
+按证据裁决了评审子代理、写好版本化断点。100 章写到第 47 章时关掉会话，
+回来仍从第 47 章继续——不用重贴提示词，不用手工重建状态。
+
 **运行要求**：DeepSeek Harness 0.2.x（Web profile）、PowerShell 7（`pwsh`）、
-Python 3.7+。若缺少 `pwsh`，门禁会记为 `DEGRADED` 而不是崩溃——引擎绝不静默放行。
+Python 3.7+。若缺少 `pwsh`，门禁会记为 `DEGRADED` 并**暂停**运行——
+绝不静默放行，也绝不崩溃。
 
 ## 架构速览
 
