@@ -61,7 +61,7 @@ const SKILL_DESCRIPTIONS = {
   'agent-chapter-summarizer': 'Subagent role: three-layer chapter summary plus character evolution records.',
   'agent-constitution-extractor': 'Subagent role: extract structured settings from a setting document plus a batch of chapters.',
   'agent-skeleton-rebuilder': 'Subagent role: turn a disassemble report and reskin settings into a brand-new constitution and outline.',
-  'Humanizer-zh': 'Chinese de-AI-writing rulebook: 24 AI-writing tells, quick checklist and quality scoring, referenced by the writing and validation skills.',
+  'humanizer-zh': 'Chinese de-AI-writing rulebook: 24 AI-writing tells, quick checklist and quality scoring, referenced by the writing and validation skills.',
   'site-fanqie': 'Optional Fanqie author-backend / ranking / help-center integration (credentials are user-supplied; never bundled).',
   'novel-downloader': 'Optional web-novel TXT downloader with multi-source search, chapter crawling and encoding conversion.',
 };
@@ -102,14 +102,19 @@ function workflowBrief(detail = '') {
   ].join('\n');
 }
 
+/** Directory names that differ from their valid kebab-case skill name. */
+const DIRECTORY_OF_SKILL = { 'humanizer-zh': 'Humanizer-zh' };
+const SKILL_NAME_OF_DIRECTORY = { 'Humanizer-zh': 'humanizer-zh' };
+
 /** True when `name` looks like a skill directory shipped in the bundle. */
 function isSkillDir(entry) {
-  return entry.isDirectory() && existsSync(join(ASSET_SKILLS, entry.name, 'SKILL.md'));
+  const path = join(ASSET_SKILLS, entry.name, 'SKILL.md');
+  return entry.isDirectory() && existsSync(path);
 }
 
-/** Read one bundled skill body. */
+/** Read one bundled skill body by its registered name. */
 function loadSkillBody(name) {
-  return readFileSync(join(ASSET_SKILLS, name, 'SKILL.md'), 'utf8');
+  return readFileSync(join(ASSET_SKILLS, DIRECTORY_OF_SKILL[name] ?? name, 'SKILL.md'), 'utf8');
 }
 
 /** Extract the one-line description from a SKILL.md frontmatter, if present. */
@@ -201,7 +206,8 @@ export function apply(ctx, config) {
   let registered = 0;
   for (const entry of readdirSync(ASSET_SKILLS, { withFileTypes: true })) {
     if (!isSkillDir(entry)) continue;
-    const skill = entry.name;
+    const dir = entry.name;
+    const skill = SKILL_NAME_OF_DIRECTORY[dir] ?? dir;
     const body = loadSkillBody(skill).trimEnd();
     ctx.skills.register({
       name: skill,
@@ -212,7 +218,7 @@ export function apply(ctx, config) {
       invocation,
       resourceBase: {
         kind: 'directory',
-        path: join(ASSET_SKILLS, skill),
+        path: join(ASSET_SKILLS, DIRECTORY_OF_SKILL[skill] ?? skill),
       },
     });
     registered += 1;
