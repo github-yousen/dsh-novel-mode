@@ -29,83 +29,19 @@ $ARGUMENTS
 /novel-batch 30-60 --check 10
 ```
 
-## 执行铁律（`/novel-batch` 的最高优先级护栏）
+## 由确定性引擎驱动（本技能只承担创作工作）
 
-在真正开始任何章节工作前，先把本命令当成**有限状态机**，不是"尽快完成任务"的开放式代理。以下规则优先于默认并行偏好与一般性效率偏好；如与其他描述冲突，以本节为准。
+本技能是**工人参考材料**，不是流程控制器。阶段顺序、门禁、重试、断点与放行
+全部由插件的 JS 状态机（`lib/orchestrator.js`）代码裁决，脚本退出码是唯一质量
+裁判；模型不决定阶段是否通过，也不自行输出流程宣告或检查点口号。
 
-### 1. 状态机铁律
+- 收到引擎派发的类型化参数（章节号、步骤 id）后，只完成本步骤的创作任务。
+- 需要校验时如实报告证据；是否放行由引擎按事实文件裁决。
+- 不得输出任何面向用户的流程宣告、检查点口号或固定措辞文本。
+- 不得整章重写；回修只改问题处；`state.yaml` 剧情字段只由 `sync-state.ps1` 写入。
+- 脚本一律 `pwsh -NoProfile -File .dsh/scripts/<name>.ps1 -Chapter <整数>`，禁止 `-Command`。
 
-- 主流程任何时刻只允许处于一个明确阶段：`前置检查 / Step O / Step O1 / Step O2 / Step A0 / Step A / Step A1 / Step A2 / Step B / Step B2 / Step C / Step D1 / Step D2 / Step D3 / Step D4 / Step E / 检查点 / 完成 / 暂停`
-- **未满足当前阶段退出条件前，禁止调用下一阶段的任何工具**
-- **禁止**用"已经差不多了""正文先写完再说""这个问题可接受"等主观判断越级推进
-- 一旦发现自己已经越级（例如还没完成 Step D2 就开始 `sync-state.ps1`，或 Step C 仍有 ERROR/CRITICAL 却准备进 Step D），**必须立刻停下，回到最近一个合法阶段重做**，不得带病继续
-
-### 2. 串行覆盖规则（覆盖全局默认并行偏好）
-
-- 本命令**覆盖**全局"默认并行"偏好：`/novel-batch` 的 ChapterPipeline 一律按**单线程串行**执行
-- **只允许并行**的场景：参数解析前的只读扫描（如读 `state.yaml` / `outline.md` / 目录存在性检查）
-- **禁止并行**的场景：
-  - Step O 各批次扩纲
-  - 同一章的 `A0 → A → A1 → A2 → B → B2 → C → D1 → D2 → D3 → D4 → E`
-  - 任意"先写正文、后等设计稿落盘""先生成摘要、同时跑同步"这类存在先后依赖的操作
-- 🔴 **禁止**在同一批工具调用里，同时发起两个存在先后依赖的脚本 / Task / 文件写入
-
-### 3. 真相源写权限白名单
-
-- `outline.md`：扩纲初稿只允许在 **Step O** 由 `batch-outliner` 生成；扩纲评审发现问题后，主会话仅可在 Step O 按报告做最小回修；主流程**禁止**在章节循环中直接补表格行、改时间线、改逐章梗概
-- `design.md`：初稿由 `batch-designer` 生成；校验发现问题后的**最小回修由主会话执行**，不得整稿重写
-- `content.md`：初稿由 `novel-writer` 生成；`fix-punctuation.ps1` / `reformat-chapter.ps1` 只做机械整理；校验发现问题后的**最小剧情回修由主会话执行**，不得整章重写
-- `summary.md`：初稿由 `novel-writer` 在 Step B 连产（正文+摘要同一上下文）；缺失/不合格时由主会话补生成；校验发现问题后的**最小回修由主会话执行**，不得整篇重写
-- `state.yaml`：剧情/角色/伏笔/世界资产字段只允许由 `sync-state.ps1` 写入；主会话通过修正 `summary.md` 后重跑脚本，禁止直接改状态真相源；主流程仅允许维护 `batchProgress` 与 `pendingConstitution`
-
-### 4. 结果放行铁律
-
-- **任何 ERROR / CRITICAL 未清零 = 禁止宣布通过，禁止进入下一步**
-- 禁止使用以下放行话术或其变体：`可接受`、`可忽略`、`先继续`、`正文已经写完`、`只是角色台词`、`问题不大`
-- Step C 的唯一出口条件：`C1` 无 ERROR（🔴 **含「段落节奏」ERROR**——均句 <18 / 均段 <16 / 极短段 >35% / 超长段 >35% 均为 ERROR 档，必须回修到 WARNING 档以下才放行）、`C2` 无 ERROR、`C3` 无 CRITICAL
-  - `C1.5` 的普通 AI 味信号为参考信号，不阻断（叠加 ≥4 点才建议回修）
-  - 🔴 但 `C1.5` 中的 `[AI味参考] 段落节奏` 项**不是参考信号**，与 `C1` 的段落节奏同源同阈值，按 ERROR/WARNING 处理
-- Step D 的唯一出口条件：`D2` PASS、`D3` 成功、`D4`（chapter-full）非 CRITICAL
-
-### 5. 步骤完成证据门
-
-- 声称某一步"完成"之前，必须**已经观察到**该步对应脚本 / SubAgent 的成功结果，且必要产物已存在
-- **没看到成功证据，就当作没完成**；不得靠"理论上应该已经写入""并行调用应该快结束了"来补判完成
-- 特别地：
-  - 没看到 `validate-design.ps1` 成功，不能说 Step A1 完成
-  - 没看到 `validate-chapter.ps1` 的「段落节奏」ERROR 清零，不能说 C1 通过
-  - 没看到 `validate-summary.ps1` PASS，不能说 Step D2 完成
-  - 没看到 `sync-state.ps1` 成功，不能说 Step D3 完成
-  - 没看到 `continuity-validator(stage=chapter-full)` 返回非 CRITICAL，不能说 Step D4 完成
-  - 没写回 `batchProgress`，不能说 Step E 完成
-
-### 6. 关卡自检宣言（每章 5 条，逐证据列举）
-
-每章设 **5 个关卡**，过关时在执行下一关的**任何操作之前**，必须输出一条自检宣言，并在同一行内**逐项列出该关每个子步骤的成品证据**：
-
-```
-✅ 关卡{X} 过：{子步骤}={证据} ｜ {子步骤}={证据} ｜ …
-⏳ 下一关：{关卡名}。我不赶工，严格按流程继续。
-```
-
-五个关卡与必列证据：
-
-| 关卡 | 覆盖步骤 | 必列证据 |
-|---|---|---|
-| **关卡A 设计就绪** | A0 / A / A1 / A2 | bundle已建 ｜ design.md 新生成或复用 ｜ validate-design PASS ｜ validator(design) 非CRITICAL |
-| **关卡B 正文就绪** | B / B2 | content.md 字数 ｜ fix-punctuation 成功 ｜ reformat-chapter 成功 ｜ 摘要连产 是/否 |
-| **关卡C 验证通过** | C1 / C1.5 / C2 / C3 | validate-chapter PASS（🔴 段落节奏 ERROR 已清零，附均句/极短段实测值）｜ AI味信号数 ｜ 角色名校验结果 ｜ 设定/创作约束校验结果 |
-| **关卡D 同步完成** | D1 / D2 / D3 / D4 | summary 就绪方式 ｜ validate-summary PASS ｜ sync-state 成功 ｜ validator(chapter-full) 非CRITICAL |
-| **关卡E 章节收尾** | E | batchProgress 已写回 ｜ context-bundle 已清理 |
-
-约束：
-
-- 🔴 **五个关卡一条都不能省**；一条宣言只能覆盖**本关卡**的步骤，禁止跨关卡合并（如"关卡A+B 过"属违规）
-- 🔴 **关卡内每个子步骤都必须给出证据**：没有证据的子步骤视为未做，必须回头补做，不得靠"应该已完成"补判
-- 🔴 "我不赶工，严格按流程继续"是**固定措辞**，不可改写或删除
-- 🔴 宣言必须作为**独立文本段落**输出，不可仅在思考中出现
-- 🔴 如果发现自己想跳过宣言来"节省空间"→ 立刻保存断点并停止响应
-- 如果回头发现漏了某关卡宣言，必须**立刻补输出**再继续
+以下为创作工作的参考细节。
 
 ## 前置检查（主流程）
 
@@ -526,8 +462,6 @@ pwsh -NoProfile -File .dsh/scripts/validate-design.ps1 -Chapter N
 - **WARNING / PASS** → 如本轮 A1/A2 改动过 `design.md`，先回到 Step A0 重建 bundle；随后进入 Step B
 - 主会话无法判断或需要改变章节方向 → 标记 `manual-review`，暂停等待用户，不调用 SubAgent 代改。
 
-🔴 **关卡A 过关宣言**（格式见执行铁律第6节）：A0 bundle 已建 ｜ design.md 新生成/复用 ｜ validate-design PASS ｜ validator(design) 非 CRITICAL。
-
 ---
 
 **Step B: 写作**
@@ -614,8 +548,6 @@ pwsh -NoProfile -File .dsh/scripts/reformat-chapter.ps1 -Chapter N
 🔴 **禁止跳过直接验证**（会引发大量标点 ERROR 与段落过长 WARNING，浪费回修轮次）。
 🔴 **禁止 AI 手动替换标点或手动分段**，必须由脚本完成。
 🔴 **回修正文后必须重跑本步骤这两条脚本，再重跑 Step C**。
-
-🔴 **关卡B 过关宣言**（格式见执行铁律第6节）：content.md 字数 ｜ fix-punctuation 成功 ｜ reformat-chapter 成功 ｜ 摘要连产 是/否。
 
 ---
 
@@ -740,8 +672,6 @@ pwsh -NoProfile -File .dsh/scripts/check-ai-flavor.ps1 -Chapter N
   3. **不合理的英文词**（如中文语境中混入的普通英文词 `truth`、`very`、`beautiful` 等，或外语音译中残留的连接词 `e`、`al`、`de`、`el`、`bin` 等）→ 🔴 **必须修正**：读取 content.md 对应行号位置，将英文词替换为对应的中文翻译或中文间隔号 `·`（如 `库赫-e贾汉纳姆` → `库赫·贾汉纳姆`），修正后**重新执行 fix-punctuation.ps1 + reformat-chapter.ps1 + validate-chapter.ps1**
   4. 🔴 **禁止**不看上下文就一律标记为"合理"跳过
 
-🔴 **关卡C 过关宣言**（格式见执行铁律第6节）：validate-chapter PASS ｜ AI味信号数 ｜ 角色名校验结果 ｜ 设定/创作约束校验结果。
-
 ---
 
 **Step D: 摘要 & 状态同步 & 角色演化**
@@ -763,8 +693,6 @@ pwsh -NoProfile -File .dsh/scripts/check-ai-flavor.ps1 -Chapter N
 
 旧断点续写时（历史版本未连产的半成品章）同样走兜底路径补齐。
 
-🔴 D1 属关卡D，**本步骤不单独出宣言**，证据（摘要就绪方式）留到关卡D 宣言中一并列出。
-
 **Step D2: 摘要脚本校验**
 
 🔴 **摘要是下一章 design/writer/validator 的关键输入，禁止未校验就直接同步到 `state.yaml`。**
@@ -780,8 +708,6 @@ pwsh -NoProfile -File .dsh/scripts/validate-summary.ps1 -Chapter N
   - 摘要结构 / 时间线 / 角色状态 / 世界资产格式 → 主会话只改对应错误段落
   - 未建档命名角色 → 主会话补建角色设定文件；若为摘要误写，则主会话修正该角色记录
 - 主会话无法安全判断 → 标记 `manual-review` 并暂停；不得带病进入 Step D3
-
-🔴 D2 属关卡D，证据（`validate-summary` PASS）留到关卡D 宣言中列出。
 
 **Step D3: 状态同步（有限自愈）**
 
@@ -803,8 +729,6 @@ pwsh -NoProfile -File .dsh/scripts/sync-state.ps1 -Chapter N
 🔴 持续自愈直到成功，绝不因重试次数而暂停；禁止第一次 `sync-state.ps1` 报错就中断整章。唯一允许暂停的情况是 `[MANUAL_REVIEW]` 类错误（脚本明确判定需要人工介入）。
 
 🔴 `sync-state.ps1` 成功时会顺带增量更新 `novel/state/memory-digest.md`（长期记忆摘录）；该更新失败只告警、不阻断。
-
-🔴 D3 属关卡D，证据（`sync-state` 成功）留到关卡D 宣言中列出。
 
 **Step D4: 综合连续性校验（chapter-full，每章必跑，含自愈）**
 
@@ -864,8 +788,6 @@ pwsh -NoProfile -File .dsh/scripts/compute-style.ps1
 pwsh -NoProfile -File .dsh/scripts/compute-style.ps1 -Rebuild
 ```
 
-🔴 **关卡D 过关宣言**（格式见执行铁律第6节）：summary 就绪方式 ｜ validate-summary PASS ｜ sync-state 成功 ｜ validator(chapter-full) 非 CRITICAL。
-
 ---
 
 **Step E: 章节收尾（更新进度 + 清理 bundle）**
@@ -899,8 +821,6 @@ batchProgress:
 🔴 **禁止使用 PowerShell 内联命令删除**（`-Command` 模式会导致 `$` 变量被 shell 二次解析），必须使用 `delete_file` 工具。
 🔴 清理失败不阻断流程（文件可能已被删或不存在），但应在日志中标注。
 🔴 下一章的 Step A0 会生成新的 bundle，所以旧 bundle 必须清理，否则可能包含过时的 state.yaml / summary / 远期记忆数据。
-
-🔴 **关卡E 过关宣言**（格式见执行铁律第6节）：batchProgress 已写回 ｜ context-bundle 已清理。随后进入下一章 Step A0 或检查点暂停。
 
 ---
 
@@ -1015,8 +935,6 @@ D) 终止批量写作
 ```
 
 🔴 **关键**：每个 SubAgent 调用都是独立会话，用完释放。主流程不累积任何正文内容。章节间的信息传递**完全通过文件系统**（content.md → summary.md → state.yaml / memory-digest.md → 下一章的 SubAgent 自行读取）。大纲同步也是通过文件系统传递（outline.md → batch-designer 自行读取）。
-
-🔴 **主流程每章的固定输出预算**：5 条关卡宣言 + 1 行进度 + 必要的问题/回修说明。除此之外不复述正文、不复述设计稿、不复述验证报告全文（只摘 CRITICAL/ERROR 条目），以便单会话能跑更多章。
 
 ---
 

@@ -519,7 +519,10 @@ check('stageGuard: unknown stage -> {ok:false,missing:[...]}', () => {
   ok(r.missing.length > 0);
 });
 check('gate: stage with no validator -> PASS skipped (no-validator)', () => {
-  for (const stage of e.STAGES.filter((s) => !e.STAGE_GRAPH[s].gate)) {
+  // BATCH is special: its gates live on the 15 nested sub-steps, so a batch
+  // state WITH a batchStep resolves a real sub-step script (B1). Only stages
+  // with no validator at all (and batch with no sub-step) skip.
+  for (const stage of e.STAGES.filter((s) => !e.STAGE_GRAPH[s].gate && s !== 'batch')) {
     const r = e.gate(stage, mockIo(), '/p', stateAt(stage));
     eq(r.ok, true, `${stage} gate`);
     eq(r.status, 'PASS');
@@ -527,6 +530,13 @@ check('gate: stage with no validator -> PASS skipped (no-validator)', () => {
     eq(r.script, null);
     deepEq(r.failures, []);
   }
+  // A batch sub-step with a gate must resolve that script, not skip.
+  const bs = stateAt('batch'); bs.batchStep = 'A1'; bs.chapter = 3;
+  const io = mockIo({ '/p/novel/outline.md': 'x' }, { spawnSync: () => ({ status: 0 }) });
+  const bg = e.gate('batch', io, '/p', bs);
+  eq(bg.status, 'PASS');
+  eq(bg.script, '.dsh/scripts/validate-design.ps1');
+  eq(io.calls.spawnSync.length, 1, 'sub-step validator actually spawned');
 });
 check('gate: unknown stage -> FAIL, not skipped', () => {
   const r = e.gate('nope', mockIo(), '/p', {});
@@ -570,13 +580,14 @@ check('gate: uses -NoProfile -File and -Chapter <int>, NEVER -Command', () => {
   ok(args.includes('-Chapter') && args.includes('15'), 'integer chapter arg');
 });
 check('gate: runner unavailable / throw -> DEGRADED skipped, never a silent PASS', () => {
+  // B3: DEGRADED must carry ok=false so no caller can mistake it for a pass.
   const files = { '/p/novel/outline.md': 'x' };
   const s = stateAt('design');
   const a = e.gate('design', mockIo(files, { spawnSync: () => { throw new Error('no pwsh'); } }), '/p', s);
-  eq(a.ok, true); eq(a.status, 'DEGRADED'); eq(a.skipped, true); eq(a.reason, 'runner-unavailable');
+  eq(a.ok, false); eq(a.status, 'DEGRADED'); eq(a.skipped, true); eq(a.reason, 'runner-unavailable');
   const noRunner = { ...mockIo(files), spawnSync: undefined };
   const b = e.gate('design', noRunner, '/p', s);
-  eq(b.status, 'DEGRADED'); eq(b.reason, 'no-script-runner'); eq(b.skipped, true);
+  eq(b.ok, false); eq(b.status, 'DEGRADED'); eq(b.reason, 'no-script-runner'); eq(b.skipped, true);
 });
 check('gate: bad chapter -> BAD_CHAPTER FAIL, never spawns', () => {
   const files = { '/p/novel/outline.md': 'x' };

@@ -54,10 +54,13 @@ check('directory names map to skill names (Humanizer-zh special case)', () => {
 check('every registration has source === runtime', () => {
   for (const r of regs) eq(r.source, 'runtime', `source for ${r.name}`);
 });
-check('every registration has invocation {modelInvocable:true,userInvocable:true}', () => {
+check('invocation: modelInvocable always true; engine-controlled skills NOT user-invocable (B4)', () => {
+  const ENGINE_CONTROLLED = new Set(['novel-batch', 'novel-write']);
   for (const r of regs) {
     eq(r.invocation?.modelInvocable, true, `modelInvocable for ${r.name}`);
-    eq(r.invocation?.userInvocable, true, `userInvocable for ${r.name}`);
+    // Engine-controlled stages must not be reachable from the / menu, or the
+    // user could bypass the deterministic gates (PM-REVIEW-R1 B4 / AC-9/11).
+    eq(r.invocation?.userInvocable, !ENGINE_CONTROLLED.has(r.name), `userInvocable for ${r.name}`);
   }
 });
 check('every registration has non-empty string content === trimmed SKILL.md body', () => {

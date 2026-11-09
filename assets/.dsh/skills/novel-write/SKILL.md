@@ -240,7 +240,6 @@ pwsh -NoProfile -File .dsh/scripts/check-ai-flavor.ps1 -Chapter N
 
 🔴 验证-修复不限次数，持续循环直到所有 ERROR / CRITICAL 修完。绝不因重试次数而停。
 
-🔴 **输出自检宣言**：`✅ Step 4 完成：综合AI校验通过。 ⏳ 下一步：Step 6（生成摘要）。我不赶工，严格按流程继续。`
 
 ### Step 6. 主流程内联生成摘要
 
@@ -280,7 +279,6 @@ pwsh -NoProfile -File .dsh/scripts/validate-summary.ps1 -Chapter N
 
 校验失败 → 主流程修 summary → 重跑校验，直到通过。
 
-🔴 **输出自检宣言**：`✅ Step 6 完成：摘要已生成并通过校验。 ⏳ 下一步：Step 7（角色演化检测）。我不赶工，严格按流程继续。`
 
 ### Step 7. 角色演化检测（主流程内联）
 
@@ -289,7 +287,6 @@ pwsh -NoProfile -File .dsh/scripts/validate-summary.ps1 -Chapter N
 - **有变化** → 直接 Edit 对应 `characters/[角色名].md` 的 `## 演化记录` 段，**追加**一条记录（不覆盖）
 - **无变化** → 跳过
 
-🔴 **输出自检宣言**：`✅ Step 7 完成：角色演化检测完成。 ⏳ 下一步：Step 8（同步全局状态）。我不赶工，严格按流程继续。`
 
 ### Step 8. 同步全局状态
 
@@ -301,7 +298,6 @@ pwsh -NoProfile -File .dsh/scripts/sync-state.ps1 -Chapter N
 
 🔴 该脚本会顺带把本章的长期记忆（一句话剧情 / 专名词条 / 伏笔台账）增量追加到 `novel/state/memory-digest.md`；失败只告警、不阻断。
 
-🔴 **输出自检宣言**：`✅ Step 8 完成：状态同步成功。 ⏳ 下一步：Step 9（深度连续性校验）。我不赶工，严格按流程继续。`
 
 ### Step 9. 深度连续性校验（调用 SubAgent continuity-validator）
 
@@ -341,7 +337,6 @@ pwsh -NoProfile -File .dsh/scripts/analyze-roster.ps1 -Chapter N
 
 🔴 验证-修复不限次数，循环直到 validator 评定 PASS 或主会话核验后确认属误报。
 
-🔴 **输出自检宣言**：`✅ Step 9 完成：深度连续性校验通过。 ⏳ 下一步：Step 10（风格指纹）。我不赶工，严格按流程继续。`
 
 ### Step 10. 风格指纹（按需）
 

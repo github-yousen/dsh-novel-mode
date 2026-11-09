@@ -39,6 +39,8 @@ const PRESET_ID = 'novel';
 
 const DIRECTORY_OF_SKILL = { 'humanizer-zh': 'Humanizer-zh' };
 const SKILL_NAME_OF_DIRECTORY = { 'Humanizer-zh': 'humanizer-zh' };
+/** Stages driven exclusively by the engine's state machine (not user-invocable). */
+const ENGINE_CONTROLLED_SKILLS = new Set(['novel-batch', 'novel-write']);
 
 const SKILL_DESCRIPTIONS = {
   'novel-constitution': 'Create or update the novel constitution (world, style, characters, book info) with guided, free-form, document-import or hot-ranking modes.',
@@ -191,7 +193,9 @@ export function apply(ctx) {
       content: body,
       source: 'runtime',
       whenToUse: SKILL_DESCRIPTIONS[skill] ?? skill,
-      invocation: { modelInvocable: true, userInvocable: true },
+      // Batch/write are engine-controlled stages: users must not invoke them
+      // directly from the / menu (that path bypasses the deterministic gates).
+      invocation: { modelInvocable: true, userInvocable: !ENGINE_CONTROLLED_SKILLS.has(skill) },
       resourceBase: { kind: 'directory', path: join(ASSET_SKILLS, dir) },
     });
   }
@@ -199,14 +203,14 @@ export function apply(ctx) {
   // --- deterministic orchestration tool -----------------------------------
   ctx.tools.register({
     name: 'novel_orchestrate',
-    description: 'Drive the 小说模式 (Novel Mode) deterministic workflow engine. Returns structured state only; never renders prose or errors. Actions: status (read), start (begin a run), select-branch (choose constitution/disassemble/import), gate-pass / gate-fail (record a code-verified gate result), batch-step (advance a nested batch step with a chapter), skip (audited human override), resume, retry, pause, reset.',
+    description: 'Drive the 小说模式 (Novel Mode) deterministic workflow engine. Returns structured state only; never renders prose or errors. Actions: status (read), start, select-branch (bootstrap), gate-pass / gate-fail (code-verified gate results), batch-step (advance a serial BATCH sub-step), dispatch (engine returns typed worker role + allowlisted args), verify (engine adjudicates structured worker verdicts against truth files before a gate can pass), skip (audited override), resume, retry, pause, reset.',
     parameters: {
       type: 'object',
       properties: {
         action: {
           type: 'string',
-          enum: ['status', 'start', 'select-branch', 'gate-pass', 'gate-fail', 'batch-step', 'skip', 'resume', 'retry', 'pause', 'reset'],
-          description: 'The state-machine action to perform.',
+          enum: ['status', 'start', 'select-branch', 'gate-pass', 'gate-fail', 'batch-step', 'skip', 'resume', 'retry', 'pause', 'reset', 'dispatch', 'verify'],
+          description: 'The state-machine action. dispatch = engine returns the typed worker role + allowlisted args for the current sub-step; verify = engine adjudicates structured worker verdicts against truth files before a gate can pass.',
         },
         goal: { type: 'string', description: 'Optional short description of the writing goal (used by start/reset).' },
         branch: { type: 'string', enum: ['constitution', 'disassemble', 'import'], description: 'Bootstrap branch (select-branch only).' },
@@ -214,6 +218,18 @@ export function apply(ctx) {
         totalChapters: { type: 'integer', description: 'Planned chapter count for a batch run.' },
         step: { type: 'string', description: 'Optional BATCH sub-step id (O..E) for batch-step.' },
         failures: { type: 'array', items: { type: 'string' }, description: 'Classified gate failure codes (gate-fail only); raw stderr is never accepted or returned.' },
+        verdicts: {
+          type: 'array',
+          description: 'Structured worker verdicts for the verify action only (never free text).',
+          items: {
+            type: 'object',
+            properties: {
+              verdict: { type: 'string', enum: ['PASS', 'WARNING', 'CRITICAL'] },
+              evidenceRefs: { type: 'array', items: { type: 'string' }, description: 'Project-relative artifact paths used as evidence.' },
+            },
+            additionalProperties: false,
+          },
+        },
         locale: { type: 'string', enum: ['zh', 'en'], description: 'Locale for the generic status token.' },
       },
       additionalProperties: false,
@@ -290,21 +306,57 @@ export function apply(ctx) {
         }
         if (args?.chapter !== undefined && action !== 'batch-step') event.chapter = args.chapter;
 
-        // For gate events, run the deterministic gate FIRST. A model cannot
-        // assert PASS: only a real script verdict can produce gate-pass.
+        // For gate events, run the deterministic gate FIRST (stage gate OR the
+        // BATCH sub-step gate via gateForStage inside engine.gate — B1). A model
+        // cannot assert PASS: only a real script verdict can produce gate-pass.
         if (action === 'gate-pass' || action === 'gate-fail') {
           const verdict = engine.gate(state.stage, io, project, state);
-          if (action === 'gate-pass' && !verdict.ok) {
-            // Engine refuses to advance on a failed gate (AC-3, NG-5).
-            const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: verdict.failures });
+          // B3: a DEGRADED / skipped verdict is NEVER a pass. Only a real
+          // PASS (ok=true, status='PASS', skipped=false) may advance.
+          const isRealPass = verdict.ok === true && verdict.status === 'PASS' && verdict.skipped !== true;
+          if (action === 'gate-pass' && !isRealPass) {
+            const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: verdict.failures.length ? verdict.failures : [verdict.status] });
             state = failed.ok ? failed.state : state;
             engine.saveState(io, project, state);
-            return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: 'GATE_REFUSED' };
+            return { ok: false, status: verdict.status === 'DEGRADED' ? STATUS_TEXT[locale].recovering : STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: verdict.status === 'DEGRADED' ? 'GATE_DEGRADED' : 'GATE_REFUSED' };
           }
-          if (action === 'gate-fail' && verdict.ok && !verdict.skipped) {
+          if (action === 'gate-fail' && isRealPass) {
             // Script says PASS; a claimed failure is ignored (no model veto).
             return { ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: 'GATE_PASS_CONFIRMED' };
           }
+        }
+
+        // B2: `dispatch` is the engine-driven worker path. It returns the
+        // typed role + allowlisted args the Host must use for a subagent, and
+        // `verify` adjudicates returned verdicts against truth files before a
+        // gate can pass. No free text ever enters the control path.
+        if (action === 'dispatch' || action === 'verify') {
+          const decision = engine.dispatchFor(state);
+          if (action === 'dispatch') {
+            return {
+              ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage,
+              state: publicState(state),
+              dispatch: { role: decision.role, args: decision.args, needsAdjudication: decision.needsAdjudication },
+              next: publicPlan(engine.plan(state)),
+            };
+          }
+          // verify: worker verdicts are passed as typed structured data only.
+          const workerVerdicts = Array.isArray(args?.verdicts) ? args.verdicts.slice(0, 16).map(v => ({
+            verdict: String(v?.verdict ?? ''),
+            evidenceRefs: Array.isArray(v?.evidenceRefs) ? v.evidenceRefs.filter(r => typeof r === 'string').slice(0, 32) : [],
+          })) : [];
+          const scriptVerdict = engine.gate(state.stage, io, project, state);
+          const combined = engine.adjudicatedGate(scriptVerdict, workerVerdicts, engine.truthResolver(io, project));
+          if (!combined.ok) {
+            const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: [combined.status] });
+            state = failed.ok ? failed.state : state;
+            engine.saveState(io, project, state);
+            return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: combined.status === 'NOT_COVERED' ? 'WORKER_NO_EVIDENCE' : 'ADJUDICATION_FAILED' };
+          }
+          const passed = engine.advance(state, { type: 'gate-pass', at: io.now() });
+          state = passed.ok ? passed.state : state;
+          engine.saveState(io, project, state);
+          return { ok: true, status: statusOf(state, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)), code: 'ADJUDICATED_PASS' };
         }
 
         const result = engine.advance(state, event);

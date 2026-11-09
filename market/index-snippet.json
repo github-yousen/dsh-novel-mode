@@ -37,7 +37,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/github-yousen/dsh-novel-mode",
-            "commit": "6438cd68a5e4f3e1e2187106fc7dd7d1fd570183"
+            "commit": "1551a1a367bad29b0fde004853db79627142b02a"
           },
           "engines": {
             "dsh": ">=0.2.0-rc.1 <0.2.0 || >=0.2.1-rc.1 <0.3.0-0"

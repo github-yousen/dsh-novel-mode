@@ -61,22 +61,34 @@ appends a bounded, structured `logEvent` (AC-24).
 
 - `stageGuard(stage, io, project)` — checks `entry[]` artifacts exist. Used as
   the entry condition for every script-backed stage.
-- `gate(stage, io, project, state)` — runs `pwsh -NoProfile -File <rel>
+- `gate(stage, io, project, state)` — resolves the validator through
+  `gateForStage(stage, batchStep)`, so **BATCH sub-step gates are really
+  executed**, not just declared (PM B1). Runs `pwsh -NoProfile -File <rel>
   -Chapter <int>` via `io.spawnSync`. Exit 0 → `PASS`; non-zero → `FAIL` with a
   **classified** failure (`script-exit-N`), never raw stderr. Missing `pwsh` or
-  missing runner → `DEGRADED` (`skipped`), recorded, never a crash and never a
-  silent pass (AC-12 / NG-3 / G1).
+  missing runner → `DEGRADED` with **`ok: false`** — the Host's `gate-pass`
+  handler requires `status === 'PASS' && ok && !skipped`, so a degraded gate
+  never advances and is never recorded as a fake PASS (PM B3 / NG-8).
 - `-Command`/`-c` is never used; chapter is normalized to an integer in
   1..99999, path-traversal values are rejected (AC-21 / S3 / S4).
 
-## 5. Adjudication (`adjudicate`)
+## 5. Adjudication (`adjudicate`, `dispatchFor`, `adjudicatedGate`)
 
 Verdicts `{ verdict: PASS|WARNING|CRITICAL, evidenceRefs[] }` are resolved
-against a truth resolver with fixed precedence
+against a truth resolver (`truthResolver(io, project)`, which checks the
+project's fact files) with fixed precedence
 **truth files > subagent judgment > engine memory**:
 - `PASS` with no confirmed evidence → `NOT_COVERED` (cannot flip a gate);
 - `CRITICAL` with no confirmed evidence → `FALSE_POSITIVE`, dismissed + logged;
 - contradictions resolve by evidence, not by label.
+
+`dispatchFor(state)` returns the typed worker role for a BATCH sub-step (e.g.
+`agent-continuity-validator` at `O1/A2/D4`) plus allowlisted arguments. The
+Host exposes this through the `dispatch` action and feeds structured worker
+verdicts back through `verify`, which calls `adjudicatedGate(scriptVerdict,
+workerVerdicts, truth)` — a gate passes **only** when the script says PASS and
+the adjudicated worker verdict is PASS with confirmed evidence. This is the
+wired, code-enforced path (PM B2 / AC-8), not dead code.
 
 `dispatchArgs()` builds typed minimal args from state; `validateDispatch()`
 rejects any disallowed field, path-like string, or prose-like value. The
