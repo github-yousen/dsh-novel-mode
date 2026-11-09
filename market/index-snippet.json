@@ -1,13 +1,21 @@
 {
   "format": 1,
-  "title": { "en": "Yousen DSH plugins", "zh": "Yousen 的 DSH 插件" },
+  "title": {
+    "en": "Yousen DSH plugins",
+    "zh": "Yousen 的 DSH 插件"
+  },
   "description": {
     "en": "A self-hosted format-1 index containing the 小说模式 (Novel Mode) plugin.",
     "zh": "自托管的 format-1 索引，收录「小说模式」插件。"
   },
   "metadata": {
     "categories": {
-      "workflow": { "title": { "en": "Workflow & Automation", "zh": "工作流与自动化" } }
+      "workflow": {
+        "title": {
+          "en": "Workflow & Automation",
+          "zh": "工作流与自动化"
+        }
+      }
     },
     "labels": {},
     "sortKeys": {}
@@ -15,7 +23,10 @@
   "plugins": [
     {
       "name": "@yousen/dsh-novel-mode",
-      "title": { "en": "Novel mode", "zh": "小说模式（Novel Mode）" },
+      "title": {
+        "en": "Novel mode",
+        "zh": "小说模式（Novel Mode）"
+      },
       "description": {
         "en": "From one idea to a finished, consistency-checked novel: a deterministic writing ENGINE for DeepSeek Harness, not a prompt pack. A JavaScript state machine owns 7 script-gated stages plus a 15-step serial per-chapter sub-FSM; PowerShell validators decide every gate, versioned atomic checkpoints resume at the exact chapter, 9 subagent workers are evidence-adjudicated in code, and the user sees only quiet structured status with zero prompt dumps, leaked errors or bundled credentials.",
         "zh": "一个想法到一本校验通过的小说：DeepSeek Harness 的确定性写作引擎，不是提示词包。JavaScript 状态机掌握 7 个脚本硬门禁阶段与 15 步串行单章子状态机，版本化原子断点精确续写，9 个子代理由代码按证据裁决，用户只看到安静的结构化状态：无提示词、无错误外泄、零内置凭据。"
@@ -26,18 +37,24 @@
       },
       "metadata": {
         "category": "workflow",
-        "keywords": ["novel", "writing", "workflow", "小说", "网文"],
+        "keywords": [
+          "novel",
+          "writing",
+          "workflow",
+          "小说",
+          "网文"
+        ],
         "labels": [],
         "sortKeys": {}
       },
       "versions": [
         {
           "version": "2.0.0",
-          "publishTimestamp": 1794243463,
+          "publishTimestamp": 1794250732,
           "source": {
             "type": "git",
             "url": "https://github.com/github-yousen/dsh-novel-mode",
-            "commit": "1551a1a367bad29b0fde004853db79627142b02a"
+            "commit": "2f38b9447d8f14df2e49a30490e7fb97a8cd9c6e"
           },
           "engines": {
             "dsh": ">=0.2.0-rc.1 <0.2.0 || >=0.2.1-rc.1 <0.3.0-0"
@@ -45,13 +62,5 @@
         }
       ]
     }
-  ],
-  "_notes": [
-    "This is a COMPLETE format-1 index whose plugins[] holds exactly ONE plugin object — directly hostable, no placeholders left. DSH ignores unknown top-level members, so you may delete this _notes field before hosting.",
-    "WHERE TO HOST: serve this file from any static host — GitHub Pages (e.g. https://github-yousen.github.io/dsh-novel-mode/index.json from a gh-pages branch or /docs), GitLab Pages, or an object store. Requirements: https, 2xx status, NO redirects, <=128 MiB, URL contains NO '# fragment' and NO user/password. A relative icon resolves against the index URL.",
-    "source.commit is the real 40-hex SHA of the pushed plugin commit; publishTimestamp is its real Unix push time (2026-11-09). DSH installs a git version as git+<url>.git#<commit>.",
-    "HOW USERS FIND IT: this is the READ/Discover side, NOT the official submission channel (that is the awesome-dsh-plugin data/plugins/*.yml PR). On dsh 0.2.1+ the user must enable the experimental 'Custom plugin indexes' bundle, then go to Plugins -> Discover -> Index sources -> Add index source and paste the hosted URL. It is per-profile volatile config (setIndexes), ~10 min cache, 15 s fetch timeout, indexes are unsigned — add only trusted sources.",
-    "engines.dsh is copied verbatim from the plugin's package.json; the host re-checks it on install.",
-    "icon is intentionally omitted (optional). If added, use an inline base64 data: URL (<=32 KiB, SVG/PNG/JPEG/WebP) or a relative/https URL; note the CATALOG tile (contributing.md) refuses SVG, but the format-1 index icon does allow SVG."
   ]
 }
