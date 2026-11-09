@@ -1,0 +1,8 @@
+{
+  "msToken": "",
+  "session_id": "",
+  "device_id": "",
+  "user_id": "",
+  "web_id": "",
+  "_note": "SANITIZED TEMPLATE - NO REAL CREDENTIALS. Copy this file to fanqie-auth.json in .dsh/scripts/ and fill the five values from your OWN logged-in browser session. fanqie-rank.py / fanqie-download.py read these keys (msToken, session_id, device_id, user_id, web_id) to build an optional auth cookie. All keys are optional: with empty values the scripts fall back to anonymous access. Never commit a filled fanqie-auth.json to a public repo. Obtain the values from browser DevTools (F12) -> Network on fanqienovel.com requests."
+}

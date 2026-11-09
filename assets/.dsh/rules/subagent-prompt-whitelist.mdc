@@ -1,0 +1,104 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-03-09T14:23:12.966Z
+provider: 
+---
+
+# SubAgent 调用 prompt 白名单规则
+
+🔴🔴🔴 **全局强制规则，适用于所有通过 Task 工具调用的 SubAgent**
+
+## 核心原则
+
+**主流程只当调度员，传参数、收结果，不当导演。**
+
+每个 SubAgent（batch-outliner / batch-designer / novel-writer / chapter-summarizer / continuity-validator 等）都有自己完整的 `<context_loading>` 定义，会自行加载所有必要文件。
+
+## 🔴 主会话对子会话返回的批判性评判（全局强制）
+
+**子会话的返回不一定是对的——主会话必须合理评判，不得盲信。**
+
+- **PASS 直接放行，有问题才核验**：子会话报 PASS 时无需例行复查，直接放行。仅当子会话报出 CRITICAL / WARNING，或主会话自行发现明显问题而子会话漏报/误报 PASS 时，才须坚持复查（可重新调用或结合自身上下文判断），不得带病放行。
+- **不盲从 CRITICAL/WARNING**：子会话可能误读文件、过度解读、或基于错误上下文下结论。主会话对照**自身上下文**（已加载的宪法/大纲/正文/state）核实：
+  - 结论与主会话掌握的事实矛盾 → 以事实为准，可驳回子会话结论，说明理由
+  - 结论依据明显错误（读错文件、把设计稿当正文等）→ 驳回并重新校验
+- **子会话之间结论矛盾**：主会话是唯一裁决者，对比双方依据后定夺，不得简单取多数或最后返回
+- **评判依据优先序**：事实文件（core/outline/state/正文）> 子会话主观判断 > 主会话记忆。任何结论必须能用文件佐证
+- **只信"证据"，不信"结论标签"**：子会话输出 CRITICAL/WARNING/PASS 只是标签，主会话应核对它给的**证据**是否成立；证据不足的 PASS 视为未覆盖，证据错误的 CRITICAL 视为误报
+
+🔴 **目的**：子会话是"分诊工具"，不是"终审法官"。终审权在主会话。防止子会话误判直接污染成品。
+
+## 禁止在 SubAgent prompt 中出现的内容
+
+- ❌ 文件路径列表（如"读取 novel/chapters/015/ 到 020/ 的 summary.md"）
+- ❌ 任何形式的"当前上下文""上下文加载规则""需要读取的文件"段落
+- ❌ 剧情方向提示（如"基于第20章的结尾，系统奖励……"）
+- ❌ 扩纲要求 / 写作要求的具体内容描述
+- ❌ 任何"帮助" SubAgent 理解上下文的补充说明
+- ❌ 无论用什么标题或措辞（"当前上下文""背景信息""参考资料"等），只要是在替 SubAgent 列文件或描述剧情，都禁止
+
+## 唯一允许的 prompt 内容
+
+只传**参数 + 一句"请严格按照你的 `<context_loading>` 规则自行加载所有必要上下文"**。
+
+各 SubAgent 模板：
+
+**batch-outliner**：
+```
+执行大纲自动扩展任务。
+startChapter: 21
+endChapter: 30
+totalTarget: 500
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+**chapter-outliner**：
+```
+执行高质量章节大纲扩展任务。
+startChapter: 21
+endChapter: 30
+totalTarget: 500
+mode: structured
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+**batch-designer**：
+```
+生成第5章设计稿。
+chapter: 5
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+**novel-writer（仅初稿）**：
+```
+写作第5章正文。
+chapter: 5
+characters: [角色A, 角色B]
+foreshadow_ids: [F-3-1]
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+🔴 校验后的正文回修由主会话依据验证报告执行，不再为回修重复调用 `novel-writer`。
+
+**chapter-summarizer**：
+```
+生成第5章摘要。
+chapter: 5
+characters: [角色A, 角色B]
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+**continuity-validator**（按 stage 区分）：
+```
+执行大纲连续性评审。  ← 或"设计稿连续性校验"/"正文连续性校验"/"同步后轻量复核"
+stage: outline            ← 或 design / chapter / chapter-full / post-sync-lite
+rangeStart: 21            ← outline 使用范围参数
+rangeEnd: 40
+请严格按照你的 <context_loading> 规则自行加载所有必要上下文。
+```
+
+## 为什么
+
+主流程手写的文件清单必然不完整（会遗漏角色设定、style.md、足够范围的 summary 等），SubAgent 看到清单后会误以为"只需加载这些"，跳过自己的完整加载规则，导致关键上下文缺失，最终输出质量严重下降。

@@ -1,0 +1,59 @@
+# Novel-Spec 全局状态
+# 由脚本自动维护，AI写作时只读参考
+# 🔴 本文件只存"活跃热数据"；长期记忆（全书逐章剧情索引 / 专名词表 / 伏笔台账）
+#    由 build-memory-digest.ps1 增量维护在 state/memory-digest.md
+
+version: 1
+lastChapter: 0
+
+timeline:
+  current: ""
+  # 只保留最近10章的事件，更早的归档到 state/timeline-archive.yaml
+  recent_events:
+    # - chapter: 1
+    #   time: "故事起始时间"
+    #   event: "开篇事件"
+
+characters:
+  # 所有角色常驻 active，不归档
+  active:
+    # 角色名:
+    #   status: alive/dead
+    #   location: "当前位置"
+    #   lastAppearance: 章节号
+
+foreshadowing:
+  active:
+    # - id: F-1-1
+    #   planted: 章节号
+    #   description: "伏笔描述"
+  # 已回收的伏笔归档，不占用活跃上下文
+  resolved_ref: "state/resolved-foreshadowing.yaml"
+
+worldAssets:
+  active:
+    # - key: "资产名"
+    #   value: "当前值"
+    #   lastUpdated: 章节号
+
+styleFingerprint:
+  avgSentenceLen: 18.0
+  dialogueRatio: 0.30
+  avgParagraphLen: 120.0
+  exclamationRate: 0.02
+  basedOnChapters: 0
+  baselineMode: fixed_first_10
+  baselineStartChapter: 1
+  baselineEndChapter: 10
+
+
+# 批量写作进度（由 /novel-batch 维护）
+batchProgress:
+  running: false
+  startChapter: 0
+  endChapter: 0
+  nextChapter: 0
+  checkpointInterval: 10
+  completedChapters: []
+  totalWords: 0
+  pendingConstitution: []

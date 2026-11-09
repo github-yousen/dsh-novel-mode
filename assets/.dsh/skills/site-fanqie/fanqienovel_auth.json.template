@@ -1,0 +1,7 @@
+{
+  "cookie": "",
+  "ms_token": "",
+  "a_bogus": "",
+  "secsdk_token": "",
+  "note": "SANITIZED TEMPLATE - NO REAL CREDENTIALS. Copy this file to fanqienovel_auth.json in this skill directory and fill the four values from your OWN logged-in browser session. api_client.py load_auth() reads cookie / ms_token / a_bogus / secsdk_token; empty values make it fail fast with a clear message. Set FANQIENOVEL_DATA_DIR to override the directory it reads from. NEVER commit a filled fanqienovel_auth.json to a public repo. Grab the values from browser DevTools (F12) -> Network: the Cookie request header, the msToken / a_bogus URL query parameters, and the x-secsdk-csrf-token request header (write operations only)."
+}

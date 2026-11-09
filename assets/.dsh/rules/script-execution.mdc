@@ -1,0 +1,71 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+---
+
+# PowerShell 脚本执行规则
+
+🔴🔴🔴 **全局强制规则，适用于本项目中所有 `.ps1` 脚本的执行**
+
+## 执行方式
+
+**必须使用 `pwsh -NoProfile -File` 执行，禁止 `-Command`。**
+
+```
+✅ pwsh -NoProfile -File .codebuddy/scripts/xxx.ps1 -参数名 参数值
+❌ pwsh -NoProfile -Command "& .codebuddy/scripts/xxx.ps1 ..."
+❌ pwsh -Command "..."
+❌ pwsh -c "..."
+```
+
+**原因**：`-Command` 模式下，脚本中的 `$变量` 和 `` `u{} `` Unicode 转义会被外层 shell 二次解析，导致静默失败或输出乱码。`-File` 模式下脚本内容原样传给 PowerShell 引擎，不存在此问题。
+
+## 必传参数
+
+所有脚本的 `Mandatory` 参数**必须在命令行显式传入**，否则 PowerShell 会进入交互式等待输入，导致执行挂起/超时。
+
+```
+✅ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
+❌ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1
+   → 缺少 -Chapter，脚本会挂起等待用户手动输入
+```
+
+**各脚本必传参数速查**：
+
+| 脚本 | 必传参数 | 可选参数 | 示例 |
+|------|---------|---------|------|
+| `build-context-bundle.ps1` | `-Chapter N` | `-ForeshadowIds "F-X-X,..."` | `-Chapter 19` |
+| `validate-design.ps1` | `-Chapter N` | | `-Chapter 19` |
+| `validate-chapter.ps1` | `-Chapter N` 或 `-Chapter All` | | `-Chapter 15` 或 `-Chapter All`（验证全部章节） |
+| `validate-summary.ps1` | `-Chapter N` | | `-Chapter 19` |
+| `sync-state.ps1` | `-Chapter N` | | `-Chapter 19` |
+| `fix-punctuation.ps1` | `-Chapter N` | `-DryRun`（仅预览不写入） | `-Chapter 19` 或 `-Chapter 19 -DryRun` |
+| `reformat-chapter.ps1` | `-Chapter N` | `-DryRun`（仅预览不写入） | `-Chapter 19` 或 `-Chapter 19 -DryRun` |
+| `compute-style.ps1` | （无） | `-InputDir`, `-Output`, `-StartChapter`, `-EndChapter`, `-Rebuild` | 直接执行（会做段落节奏**基准体检**并写入 `baselineHealthy`）。⚠️ 仅**前 30 章内**可用 `-Rebuild` 重建坏基准，之后不再重建 |
+| `analyze-source.ps1` | （无） | `-InputDir`, `-Mode analyze\|similarity`, `-SourceDir`, `-TargetFile` | 直接执行 或 `-Mode similarity -SourceDir "novel/source/chapters" -TargetFile "novel/outline.md"` |
+| `lib/paragraph-metrics.ps1` | — | — | **公共库，不单独执行**。被 `validate-chapter.ps1`（检测 5.5 段落节奏）/ `check-ai-flavor.ps1`（④ 段落节奏）/ `compute-style.ps1`（基线体检）点源加载。内含人类成书实测基线（4 本专业网文各 30 万字）与 ERROR/WARNING 两级阈值 |
+| `build-state.ps1` | （无） | | 直接执行（会顺带全量重建 `memory-digest.md`） |
+| `build-memory-digest.ps1` | （无） | `-UpTo N`, `-Rebuild`, `-ProjectRoot "项目根"` | 直接执行（增量维护 `novel/state/memory-digest.md`：全书逐章一句话剧情 + 专名词表 + 伏笔台账）。⚠️ 常态由 `sync-state.ps1` / `build-context-bundle.ps1` 自动调用，**无需手动跑**；仅在导入旧书、摘要批量补齐后需 `-Rebuild` |
+| `split-chapters.ps1` | `-OutputDir "路径"` | `-InputFile`/`-InputDir`（二选一）, `-Encoding` | `-InputFile "稿件.txt" -OutputDir "novel/chapters"` |
+| `validate-outline.ps1` | `-StartChapter N -EndChapter M` 或 `-All` | | `-StartChapter 41 -EndChapter 60` 或 `-All`（仅做 outline 存在性/非空轻量检查，不再校验逐章模板） |
+| `check-ai-flavor.ps1` | `-Chapter N` 或 `-All` | `-ProjectRoot "项目根目录"`（共享 `.codebuddy` 多项目场景必须传） | `-Chapter 15` 或 `-All`（AI味机械检测：清单体/八股词/高频词；ERROR→必修）。⚠️ 根目录 `.codebuddy` 被多个项目共享时（如 `d:\temp\novel` 下有 `new/`、`1999/`），必须 `-ProjectRoot` 指定目标项目，否则兄弟目录搜索可能命中错误项目 |
+
+🔴 **N 必须替换为实际章节数字**（如 `19`），不可写字面量 `N`。`validate-chapter.ps1` 的 `-Chapter` 也可传字符串 `All`。
+
+## 工作目录
+
+所有脚本通过 `$PSScriptRoot` 自动推算项目根路径，**无需事先 cd 到项目目录**。直接用相对或绝对路径指向脚本文件即可：
+
+```
+✅ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
+✅ pwsh -NoProfile -File d:/write/novel/女帝/.codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
+```
+
+两者效果完全相同，脚本内部都能正确找到 `novel/`、`novel/chapters/` 等目录。
+
+## 返回值处理
+
+- 退出码 `0` = 成功
+- 退出码非 `0` = 失败，读取 stderr 获取错误信息
+- 脚本的 stdout 输出包含结构化进度信息（如行数、文件大小、PASS/FAIL），可直接解析

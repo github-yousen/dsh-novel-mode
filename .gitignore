@@ -1,0 +1,10 @@
+# Runtime / local state — never publish
+node_modules/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+assets/.dsh/scripts/fanqie-auth.json
+assets/.dsh/skills/site-fanqie/fanqienovel_auth.json
+assets/.dsh/skills/site-fanqie/publish_result.json
+assets/.dsh/skills/site-fanqie/package-lock.json

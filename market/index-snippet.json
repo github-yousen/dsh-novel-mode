@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "title": { "en": "Yousen DSH plugins", "zh": "Yousen 的 DSH 插件" },
+  "description": {
+    "en": "A self-hosted format-1 index containing the 小说模式 (Novel Mode) plugin.",
+    "zh": "自托管的 format-1 索引，收录「小说模式」插件。"
+  },
+  "metadata": {
+    "categories": {
+      "workflow": { "title": { "en": "Workflow & Automation", "zh": "工作流与自动化" } }
+    },
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "@yousen/dsh-novel-mode",
+      "title": { "en": "Novel mode", "zh": "小说模式（Novel Mode）" },
+      "description": {
+        "en": "A DeepSeek Harness plugin that adds a 小说模式 (Novel Mode) button and a /novel command: entering the mode materializes a bundled .dsh working copy of novel-writing skills, subagent roles, PowerShell and Python scripts, templates, config and rules into the current project, then routes the model through the constitution, outline, design, writing, batch and validation stages.",
+        "zh": "把长篇小说写作流程接入 DeepSeek Harness：新增「小说模式」按钮与 /novel 命令，进入模式时把随包附带的技能、子代理角色、PowerShell 与 Python 脚本、模板、配置与规则物化到当前项目的 .dsh/ 目录，并按宪法、大纲、设计、写作、批量、校验各阶段引导模型。"
+      },
+      "homepage": "https://github.com/github-yousen/novel/tree/master/packages/novel-mode-plugin",
+      "repository": {
+        "url": "https://github.com/github-yousen/novel",
+        "directory": "packages/novel-mode-plugin"
+      },
+      "metadata": {
+        "category": "workflow",
+        "keywords": ["novel", "writing", "workflow", "小说", "网文"],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1794182400,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/github-yousen/novel",
+            "commit": "REPLACE_WITH_40_HEX_COMMIT_SHA",
+            "path": "packages/novel-mode-plugin"
+          },
+          "engines": {
+            "dsh": ">=0.2.0-rc.1 <0.3.0-0 || >=0.2.1-rc.1 <0.3.0-0"
+          }
+        }
+      ]
+    }
+  ],
+  "_notes": [
+    "This is a COMPLETE format-1 index whose plugins[] holds exactly ONE plugin object — it is directly hostable after you fill the two placeholders below. DSH ignores unknown top-level members, so you may delete this _notes field before hosting.",
+    "WHERE TO HOST: serve this file (plus any icons/ dir) from any static host — GitHub Pages (e.g. https://github-yousen.github.io/novel/index.json from the repo's docs/ or a gh-pages branch), GitLab Pages, or an object store. Requirements: https, 2xx status, NO redirects, <=128 MiB, URL contains NO '# fragment' and NO user/password. A relative icon resolves against the index URL.",
+    "PLACEHOLDER 1 — source.commit MUST be a 40-character hex SHA of the pushed commit (git rev-parse HEAD after STEP 0 in SUBMISSION_STEPS.md). The placeholder string is NOT 40-hex, so DSH would reject the whole index until it is replaced. DSH installs a git version as git+<url>.git#<commit> with &path:<directory>.",
+    "PLACEHOLDER 2 — publishTimestamp is Unix seconds; 1794182400 is 2026-11-09T00:00:00Z. Replace with the real push time, e.g. git log -1 --format=%ct.",
+    "HOW USERS FIND IT: this is the READ/Discover side, NOT the official submission channel (that is the awesome-dsh-plugin data/plugins/*.yml PR). On dsh 0.2.1+ the user must enable the experimental 'Custom plugin indexes' bundle, then go to Plugins -> Discover -> Index sources -> Add index source and paste the hosted URL. It is per-profile volatile config (setIndexes), ~10 min cache, 15 s fetch timeout, indexes are unsigned — add only trusted sources. This machine's plugin_market list_indexes is currently empty.",
+    "engines.dsh is copied verbatim from the plugin's package.json; the host re-checks it (or the @deepseek-ai/dsh* peer ranges) on install.",
+    "icon is intentionally omitted (optional). If added, use an inline base64 data: URL (<=32 KiB, SVG/PNG/JPEG/WebP) or a relative/https URL; note the CATALOG tile (contributing.md) refuses SVG, but the format-1 index icon does allow SVG."
+  ]
+}

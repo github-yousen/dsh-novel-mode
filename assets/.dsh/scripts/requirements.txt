@@ -1,0 +1,8 @@
+# 番茄小说脚本 Python 依赖
+#
+# fanqie-rank.py    — 纯标准库，无需额外安装 ✅
+# fanqie-download.py — 纯标准库，无需额外安装 ✅
+#
+# 两个脚本均只使用 Python 内置库：
+#   json, re, ssl, urllib, argparse, pathlib, datetime, concurrent.futures
+# Python >= 3.7 即可运行，无需 pip install 任何包

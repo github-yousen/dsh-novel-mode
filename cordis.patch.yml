@@ -1,0 +1,11 @@
+# 小说模式 (Novel Mode) — one Host row plus its Client half.
+# The Host half registers the bundled novel-writing skills, the /novel command,
+# the workflow bootstrap tool and a short routing prompt section. The Client
+# half adds the "小说模式" button to the conversation composer.
+- insert:
+    - id: novel-mode
+      name: '@yousen/dsh-novel-mode'
+      config:
+        sectionOrder: 1960
+        modelInvocable: true
+        userInvocable: true
