@@ -5,6 +5,18 @@
 
 ## 1. Layer split
 
+**Execution model (important, PM R2-O1):** the engine is **tool-call driven**, not
+an autonomous background daemon. The model acts as a *transport* that calls
+`novel_orchestrate` with one action at a time (`start`, `dispatch`, `verify`,
+`gate-pass`, `batch-step`…). Every *decision* — which worker role, which
+arguments, whether a gate passed, whether the run may advance — is made by the
+engine's code, never by the model. The model cannot skip a stage (illegal
+transitions are rejected), cannot assert a PASS (the Host re-runs the real
+script), and cannot dispatch free text (typed allowlist). A fully unattended
+Host-driven chain is a possible future enhancement, not part of this release;
+the product is still deterministic and goodwill-independent because control
+flow never lives in prose.
+
 | Layer | File | Responsibility | Testable alone |
 |---|---|---|---|
 | Deterministic core | `lib/orchestrator.js` | transition table, gates, adjudication, checkpoint, dispatch allowlist | ✅ pure JS, injected `io`, no Cordis |
