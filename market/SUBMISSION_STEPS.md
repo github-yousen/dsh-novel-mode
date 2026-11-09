@@ -15,7 +15,7 @@
 3. **产出目录条目**：[`data/plugins/github-yousen__dsh-novel-mode.yml`](data/plugins/github-yousen__dsh-novel-mode.yml)——一个 YAML 文件，`url`/`name`/文件名三者一致，`category: workflow`，`description.en` 必填且已引号化，描述与代码相符、无夸大。
 4. **fork 上游并开 PR**：见下方「自动投稿结果」记录的 PR 链接。
 
-> ⚠️ **仓库年龄门槛**：`contributing.md` 的 CI 要求仓库创建满 **1 天**。`dsh-novel-mode` 创建于 2026-11-09，若 PR 的 age gate 变红，gate 结论是快照、过期会自动重跑——**无需重开 PR**，约 24 小时后自动通过。这是唯一的固有延迟。
+> ⚠️ **仓库年龄门槛（实测）**：`contributing.md` 的 CI 要求仓库创建满 **1 天**。PR #13689 的 `Submission gate` 目前只因此一项为 failure，输出原文：`repository is 0.0 days old (needs 1) — nothing to do: this check re-runs by itself and should clear in about 24h. No need to resubmit, push, or close and reopen; the age bar is the only thing failing here.` 其余 `check`（条目数、`dsh.bundle`、格式、lint、站点构建）均为 success。约 24 小时后 gate 自动重跑转绿，无需任何操作、不要重开 PR。这是唯一的固有延迟。
 
 ---
 

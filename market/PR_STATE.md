@@ -12,9 +12,17 @@
 
 已自动完成：建仓 → 推送 → 加 topic → fork 上游 → 建分支 → 提交一个 YAML → 向上游 `main` 开 PR。
 
+## CI 实测结果（2026-11-09 23:2x）
+
+| Check | 结论 |
+|---|---|
+| `check`（格式/lint/站点构建） | ✅ success |
+| `Submission gate` | ⏳ failure — **唯一原因**：`repository is 0.0 days old (needs 1) — nothing to do: this check re-runs by itself and should clear in about 24h. No need to resubmit, push, or close and reopen; the age bar is the only thing failing here.` |
+
+即：`dsh.bundle`、条目数量、YAML 格式、描述一致性等全部通过；只剩上游强制的「仓库创建满 1 天」时间门槛，约 24 小时后 gate 自动重跑转绿，**无需任何操作、不要重开 PR**。
+
 剩余（维护者/CI 侧，无法自动化）：
 
-- CI：Entry count ≤3 ✅、`dsh.bundle` ✅、Repo age ≥1 天 ⏳（仓库创建于 2026-11-09，gate 结论是快照，约 24h 后自动重跑通过，无需重开 PR）、awesome-lint + 站点构建。
 - 维护者人工评审：读源码核对描述、分类、是否重复、有无可疑代码。
 - 合并后站点自动重建，`awesome-dsh-plugin.com/plugins.json` 与 `dsh-plugin-catalog` 更新，dshmarket 通常一天内收录。
 
