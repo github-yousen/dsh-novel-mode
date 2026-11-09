@@ -32,13 +32,20 @@ credentials needed.
 | B4 | Rejected prose FSM still shipped & user-invocable | 0 control-prose strings in any registered SKILL.md; `novel-batch`/`novel-write` `userInvocable:false` | PASS |
 | B5 | Stray root runtime checkpoint ships | no root `.dsh/` checkpoint; `.gitignore` excludes `.dsh/` | PASS |
 
-## Not verifiable in this harness (documented pending, not silent failures)
+## Partially closed / still external (documented pending, not silent failures)
+
+Round 2 (2026-11-10) exercised the FINAL installed plugin through the **real Harness
+runtime**: real Agent, real cwd, real `pwsh` validator, real durable checkpoint.
+See [LIVE-VERIFICATION.md](LIVE-VERIFICATION.md). AC-38 and AC-45 are now
+**partially closed with live runtime evidence** — the engine, script gates,
+typed dispatch, code adjudication and versioned checkpoint are proven live; only
+the two sub-steps below remain external.
 
 | AC | Why | Verification |
 |---|---|---|
-| AC-38 (real-model ≥3 chapters + `validate-chapter -Chapter All` PASS) | No live LLM worker dispatch in an automated test; engine dispatches typed roles, execution happens in a real user session | Real user session on a clean profile with `pwsh` installed, 3 chapters via the engine |
+| AC-38 (real-model ≥3 chapters + `validate-chapter -Chapter All` PASS) | **Partially closed**: engine + real script gates + adjudication + checkpoint proven in the live runtime; no live LLM worker generates chapters in an automated test | A real user session with an LLM worker, 3 chapters via the engine |
 | AC-44 (market PR merged / CI gates success) | Upstream `awesome-dsh-plugin` PR #13689 merge is maintainer-controlled; age gate is time-based | Re-check PR after the age gate auto-reruns; see `market/PR_STATE.md` |
-| AC-45 (clean-profile install + GUI mode dropdown) | Cannot spawn a second DSH profile or restart the Host/Web GUI from the automated harness | Equivalent code path verified by `lead-integration.mjs` (23/23) and `plugin_manager` install |
+| AC-45 (clean-profile install + GUI mode dropdown) | **Partially closed**: FINAL active plugin exercised end-to-end in the live profile; cannot spawn a second DSH profile or restart the GUI from the harness | A fresh separate profile + visual dropdown pick |
 
 **Independent reproduction**: the resident PM re-ran `run-all.mjs` during R1 and
 reproduced 8/8 suites / 257 assertions before the 5 blocker fixes; R2 re-runs
