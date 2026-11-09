@@ -3,12 +3,19 @@
  *
  * Adds one button below the composer. Clicking it executes the Host's `/novel`
  * command through the same Client-callable Remote the built-in command menu
- * uses (`ctx.remote.commands.execute`), so the UI button and the `/novel`
- * slash command share one Host operation.
+ * uses (`remote.commands.execute`), so the UI button and the `/novel` slash
+ * command share one Host operation.
  *
- * Written as a plain-JS `dsh.client` bundle: React comes from the host module
- * table, all styling is a component-local <style> element (so unmounting
- * removes it), and no other plugin's modules are imported.
+ * Plain-JS `dsh.client` bundle: React comes from the host module table, all
+ * styling is a component-local <style> element (removed on unmount), and no
+ * other plugin's modules are imported.
+ *
+ * Service access rule: `ctx` is a restricted Cordis proxy. Every service is
+ * resolved once inside `apply()` with `ctx.get(name)` (after declaring it in
+ * `inject`), and only plain closures/values are handed to the React component.
+ * The component never touches `ctx` or a service proxy itself — reading
+ * `remote.commands` from a captured proxy at click time is what produces
+ * "cannot get property \"remote.commands\" without inject".
  */
 
 window.__ModuleLoader__.load({
@@ -59,6 +66,7 @@ window.__ModuleLoader__.load({
     function NovelModeButton(props) {
       const sessionId = props.sessionId;
       const t = props.t;
+      const onEnter = props.onEnter;   // plain closure, resolved in apply()
       const [busy, setBusy] = React.useState(false);
       const [active, setActive] = React.useState(false);
       const [error, setError] = React.useState('');
@@ -68,13 +76,11 @@ window.__ModuleLoader__.load({
         setBusy(true);
         setError('');
         try {
-          const remote = props.remote;
-          if (!remote || !remote.commands) throw new Error('Remote command service unavailable');
-          const result = await remote.commands.execute(sessionId, '/novel ', []);
+          const result = await onEnter(sessionId);
           if (!result || !result.ok) {
-            setError(String(result?.error?.message ?? t('errorGeneric')));
+            setError(String((result && result.error && result.error.message) || t('errorGeneric')));
           } else if (result.value && result.value.result && result.value.result.kind === 'error') {
-            setError(String(result.value.result.text ?? t('errorGeneric')));
+            setError(String(result.value.result.text || t('errorGeneric')));
           } else {
             setActive(true);
           }
@@ -106,10 +112,27 @@ window.__ModuleLoader__.load({
     }
 
     return {
-      inject: ['slots', 'remote', 'locale'],
+      // Cordis resolves `ctx.remote.commands` through the nested service key
+      // `remote.commands`: both `remote` and `remote.commands` must be declared,
+      // or the context proxy throws `cannot get property "remote.commands"
+      // without inject`. This matches the shipped `dsh-client-ui-commands`
+      // declaration (['...','remote','remote.commands','locale']).
+      inject: ['slots', 'remote', 'remote.commands', 'locale'],
       apply(ctx) {
-        const remote = ctx.remote;
-        const locale = ctx.get ? ctx.get('locale') : undefined;
+        // Resolve every service eagerly, inside the injected context. No proxy
+        // reference escapes into the React tree.
+        const get = (name) => (typeof ctx.get === 'function' ? ctx.get(name) : undefined);
+        const slots = get('slots');
+        const remoteCommands = get('remote.commands');
+        const locale = get('locale');
+
+        /** Plain closure: the only thing the button ever calls. */
+        const onEnter = async (sessionId) => {
+          if (!remoteCommands || typeof remoteCommands.execute !== 'function') {
+            throw new Error('Remote command service unavailable');
+          }
+          return remoteCommands.execute(sessionId, '/novel ', []);
+        };
 
         /** Locale-owned copy with a safe English/Chinese fallback. */
         let t = (key) => ({
@@ -138,7 +161,8 @@ window.__ModuleLoader__.load({
           if (console && console.error) console.error('novel-mode locale:', cause);
         }
 
-        return ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register(
+        if (!slots || typeof slots.inject !== 'function') return () => {};
+        return slots.inject('conversation.composer.dock', () => slots.register(
           {
             name: 'conversation.composer.dock',
             id: 'novel-mode',
@@ -148,7 +172,7 @@ window.__ModuleLoader__.load({
           function NovelModeSlot(slotProps) {
             return h(NovelModeButton, {
               sessionId: slotProps && slotProps.sessionId,
-              remote,
+              onEnter,
               t,
             });
           },
