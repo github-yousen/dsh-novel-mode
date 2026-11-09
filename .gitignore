@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.log
 .DS_Store
+.dsh/
 assets/.dsh/scripts/fanqie-auth.json
 assets/.dsh/skills/site-fanqie/fanqienovel_auth.json
 assets/.dsh/skills/site-fanqie/publish_result.json
