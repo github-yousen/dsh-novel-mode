@@ -9,3 +9,5 @@ assets/.dsh/scripts/fanqie-auth.json
 assets/.dsh/skills/site-fanqie/fanqienovel_auth.json
 assets/.dsh/skills/site-fanqie/publish_result.json
 assets/.dsh/skills/site-fanqie/package-lock.json
+
+.verify-live/
