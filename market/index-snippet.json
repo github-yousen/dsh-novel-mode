@@ -17,8 +17,8 @@
       "name": "@yousen/dsh-novel-mode",
       "title": { "en": "Novel mode", "zh": "小说模式（Novel Mode）" },
       "description": {
-        "en": "A DeepSeek Harness plugin that adds 小说模式 (Novel Mode) as a selectable entry in the session mode dropdown: an agent preset with a novel-writing persona and the standard tool set, plus 21 runtime skills and a silently materialized .dsh working copy of subagent roles, PowerShell and Python scripts, templates, config and rules.",
-        "zh": "为 DeepSeek Harness 的会话模式下拉框新增可选「小说模式」：一个带写作 persona 与标准工具集的 Agent 预设，外加 21 个运行时技能，并把子代理角色、PowerShell 与 Python 脚本、模板、配置与规则静默物化到 .dsh/ 目录。"
+        "en": "From one idea to a finished, consistency-checked novel: a deterministic writing ENGINE for DeepSeek Harness, not a prompt pack. A JavaScript state machine owns 7 script-gated stages plus a 15-step serial per-chapter sub-FSM; PowerShell validators decide every gate, versioned atomic checkpoints resume at the exact chapter, 9 subagent workers are evidence-adjudicated in code, and the user sees only quiet structured status with zero prompt dumps, leaked errors or bundled credentials.",
+        "zh": "一个想法到一本校验通过的小说：DeepSeek Harness 的确定性写作引擎，不是提示词包。JavaScript 状态机掌握 7 个脚本硬门禁阶段与 15 步串行单章子状态机，版本化原子断点精确续写，9 个子代理由代码按证据裁决，用户只看到安静的结构化状态：无提示词、无错误外泄、零内置凭据。"
       },
       "homepage": "https://github.com/github-yousen/dsh-novel-mode",
       "repository": {
@@ -32,12 +32,12 @@
       },
       "versions": [
         {
-          "version": "1.1.0",
+          "version": "2.0.0",
           "publishTimestamp": 1794243463,
           "source": {
             "type": "git",
             "url": "https://github.com/github-yousen/dsh-novel-mode",
-            "commit": "7ec3b9f258a2726b598b860cf73e53b088875dee"
+            "commit": "6438cd68a5e4f3e1e2187106fc7dd7d1fd570183"
           },
           "engines": {
             "dsh": ">=0.2.0-rc.1 <0.2.0 || >=0.2.1-rc.1 <0.3.0-0"

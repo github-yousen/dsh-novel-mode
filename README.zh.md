@@ -1,83 +1,88 @@
-# 小说模式（Novel Mode）for DeepSeek Harness
+# 小说模式 · Novel Mode
 
-[English](README.md)
+> **「一个想法到一本校验通过的小说：确定性写作引擎替你跑完全部阶段，你不用再伺候提示词。」**
+>
+> *From one idea to a finished, consistency-checked novel — a deterministic writing engine that runs the stages for you, so you never babysit a prompt.*
 
-把一整套长篇小说工业化写作工作流做成 DSH 的一个**可选模式**：装上插件后，
-会话工作区名旁边的**模式下拉框**里会多出「小说模式」。选中它，该会话即可使用
-完整写作流程——不额外添加按钮、斜杠命令，也不自动注入提示词。
+[English](README.md) · [MIT 许可](LICENSE) · [市场条目](market/data/plugins/github-yousen__dsh-novel-mode.yml)
 
-## 它做了什么
+市面上多数「写作助手」本质是一包提示词：你把指令贴进去，模型*可能*照做，
+每章还得自己复核。**小说模式是引擎，不是提示词。** 一段真实的 JavaScript
+状态机掌握阶段顺序、门禁、重试与断点；模型只是引擎在特定阶段调用的
+**工人**，永远无权决定「这一章过没过」。
 
-插件只贡献两行 Loader 声明：
+![小说模式能力总览](assets/screenshot-1.png)
 
-1. **一个 Agent Preset**（`@deepseek-ai/dsh-agent-preset`）：`id: novel`，显示名
-   `小说模式`，带一段说明「当前处于小说模式」的 persona，以及标准工具集（文件、
-   shell、技能、子代理、网页、压缩、goal、todo、present）。**工作流由技能驱动**：
-   用户描述意图，模型从 `/` 菜单加载匹配的 `novel-*` 技能执行。
-2. **一个 Host 插件**，静默做两件事：
-   - 把 **21 个工作流技能**注册为运行时技能（10 个 `novel-*` 工作流技能、
-     9 个 `agent-*` 子代理角色、`humanizer-zh`、`site-fanqie`、`novel-downloader`）；
-   - 当会话选中「小说模式」时，**静默**把随包 `.dsh/` 工作副本物化到该项目根目录
-     （幂等，绝不覆盖已有文件）。**不向模型注入任何消息**。
+## 到底有什么不同
 
-为什么必须物化：所有技能与 PowerShell 脚本都按「相对项目根」引用路径
-（`.dsh/scripts/...`、`.dsh/templates/...`、`.dsh/config.yaml`），脚本用
-`$PSScriptRoot` 上两级推算项目根，因此 assets 必须落在 `<项目根>/.dsh/`。
+| 提示词包 | 小说模式引擎 |
+|---|---|
+| 一段话告诉模型「你现在是有限状态机」 | `lib/orchestrator.js` 里真实的 `STAGE_GRAPH` 转移表，非法转移直接拒绝 |
+| 质量由模型自己说了算 | PowerShell 校验脚本裁决（`validate-chapter.ps1` 13 项硬检测）；模型文本**无法**翻转门禁 |
+| 会话一断进度就没了 | `.dsh/state/` 下版本化原子断点；重启后精确恢复到中断处 |
+| 子代理报个 PASS 就信 | 代码裁决：证据优先序，无证据的 PASS 判 `NOT_COVERED`，被事实驳回的 CRITICAL 作废 |
+| 报错、脚本名、stderr 直接甩到聊天里 | 只有通用的本地化状态词，绝不暴露内部细节 |
 
-工作副本包含 21 个 SKILL.md、18 个 `.ps1`、19 个 `.py`、8 个模板、`config.yaml`、
-`charset.json`、`AGENTS.md`、2 条 `.mdc` 规则、9 个角色定义，以及 Humanizer-zh 的
-README/LICENSE。**不含任何凭据**。
+## 它做什么
 
-## 安装
+- 在会话的**模式下拉框**里选「小说模式」——整个 UI 就这一下。
+- 引擎跑一个 **7 阶段 DAG**（宪法 → 大纲 → 设计 → 写作 → 校验 → 批量 → 导出），
+  外加三条 bootstrap 分支（引导建宪法 / 拆书换皮 / 导入已有书稿）。
+  `BATCH` 是嵌套的、严格串行的 **15 步单章子状态机**。
+- **代码硬门禁**：入口门检查产物；出口门以
+  `pwsh -NoProfile -File … -Chapter <整数>` 跑校验脚本；失败的门按有界、分类的
+  重试策略暂停——引擎绝不在 unresolved 错误上放行，绝不「带病通过」。
+- **断点与恢复**：100 章写到第 47 章中断，就从第 47 章继续；重跑幂等；
+  断点损坏会先备份再重建，绝不静默丢弃。
+- **经裁决的工人**：9 个隔离子代理角色，参数类型化且最小化；派发器在代码
+  层面无法输出文件清单或剧情提示；引擎按事实文件裁决它们的结论。
+- **安静且安全**：不展示提示词、不外泄错误、**零内置凭据**、不影响其它项目会话。
+
+可复核的量化（对最终发布树重新清点）：**21 个技能 · 18+ 个
+PowerShell/Python 校验脚本 · 9 个子代理角色 · 7 个 Markdown 模板 + 1 份 state.yaml 骨架 · 2 套规则 ·
+2 个空值凭据模板**。
+
+## 安装（不超过 5 行）
 
 ```sh
 dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mode
+# 或从本地检出目录：Harness 插件管理器 plugin_manager install_bundle，
+# target 填本目录绝对路径
 ```
 
-或从本地检出目录安装（Harness 插件管理器的 `plugin_manager install_bundle`，
-`target` 填本目录绝对路径）。
+然后**刷新页面**，打开模式下拉框选「小说模式」，说出你想写什么，剩下的交给引擎。
 
-安装后**刷新 Web 页面 / 新建会话**，模式下拉框里就会出现「小说模式」。已有会话
-保留其启动时选定的预设。
+**运行要求**：DeepSeek Harness 0.2.x（Web profile）、PowerShell 7（`pwsh`）、
+Python 3.7+。若缺少 `pwsh`，门禁会记为 `DEGRADED` 而不是崩溃——引擎绝不静默放行。
 
-## 运行要求
-
-- DeepSeek Harness `0.2.x`（Web profile；模式下拉框属于 Web UI）。
-- 主机安装 **PowerShell 7（`pwsh`）** 与 **Python 3.7+**：脚本统一以
-  `pwsh -NoProfile -File .dsh/scripts/<脚本>.ps1` 调用。
-- 目标小说项目目录应为会话工作目录；工作流自行维护项目下的 `novel/` 树。
-
-## 使用
-
-1. 新建会话，点开工作区名旁的**模式下拉框**，选择 **小说模式**。
-2. 描述意图——「建立宪法」「设计第 15 章」「写第 16 章」「全书校验」——模型会从
-   `/` 菜单加载匹配的技能；也可直接在 `/` 菜单点选技能。
-3. 流程阶段：宪法 → 拆书/导入 → 大纲 → 设计 → 写作 → 批量 → 校验 → 设计稿导出。
-
-随包 `AGENTS.md` 载有全部铁律（章节三位补零、先设计稿后正文、每章验证并同步状态、
-中文双引号、去 AI 味、`pwsh -NoProfile -File`）。
-
-## 凭据与隐私
-
-**包内不含任何凭据。** 可选的番茄站点集成只提供空的
-`fanqie-auth.json.template` / `fanqienovel_auth.json.template`；如需使用，把
-`.template` 复制为真实文件名并在本地填写，这些真实文件名已被 git 忽略。
-`publish_result.json`、`package-lock.json`、字节码缓存与体积很大的逆向分析文件
-均已刻意剔除。
-
-## 目录结构
+## 架构速览
 
 ```
-package.json          dsh.bundle 清单（纯 Host，无 dsh.client）
-cordis.patch.yml      一行 Host 声明 + 一行 @deepseek-ai/dsh-agent-preset 声明
-index.js              Host 半：技能注册 + 静默 .dsh/ 物化
-locale/*.json         展示元数据
-icon.svg              原创书本图标
-assets/.dsh/          工作流工作副本（物化到各小说项目）
-market/               可直接提交的 awesome-dsh-plugin 目录条目
-docs/                 研究记录（资产审计、API、发布）
+用户选模式 ──▶ novel_orchestrate 工具（Host）
+                    │
+      lib/orchestrator.js  ← 纯函数、可独立导入、有单元测试
+      STAGE_GRAPH / BATCH_SUBSTEPS / advance() / gate() / adjudicate()
+      loadState() / saveState() → .dsh/state/novel-mode.checkpoint.json
+                    │
+      工人：21 个运行时技能（仅承担创作阶段）
+      校验器：pwsh 脚本（质量的唯一裁判）
+                    │
+      只输出结构化状态 —— 无散文、无错误、无提示词
 ```
 
-## 许可
+详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
+[docs/PM-PRD.md](docs/PM-PRD.md)（验收清单）· [test/](test/)（多角度测试套件）。
 
-MIT。随包附带的 `Humanizer-zh` 技能使用其自带许可证。
+## 隐私与安全
+
+不内置任何凭据。可选的番茄站点集成只提供空的 `*.json.template`；需要时复制到
+真实文件名并在本地填写（这些文件名已被 git 忽略）。`publish_result.json`、
+lockfile、字节码缓存与体积庞大的逆向分析文件均已剔除。所有脚本调用都使用
+显式、整数有界的参数——绝不用 `-Command`，绝不拼接用户输入。
+
+## 状态
+
+- 开源仓库：<https://github.com/github-yousen/dsh-novel-mode>（Public、`main`、MIT、topic `dsh-plugin`）。
+- 市场投稿：[awesome-dsh-plugin PR #13689](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689)。
+
+MIT。随包的 `Humanizer-zh` 使用其自带许可证。

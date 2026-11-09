@@ -1,14 +1,15 @@
 # 小说模式 (Novel Mode)
 #
-# ONE Host row providing the bundled skills, plus ONE Agent-preset declaration
-# that adds "小说模式" as a selectable entry in the session's mode dropdown.
-# The preset is a declarative @deepseek-ai/dsh-agent-preset row; no custom
-# button, slash command, tool, or prompt injection is contributed.
+# ONE Host row providing the bundled skills + deterministic orchestration tool,
+# plus ONE Agent-preset declaration that adds "小说模式" to the mode dropdown.
+# The preset carries ONLY display metadata + tool wiring — NO persona prose,
+# NO system-prompt section, NO workflow instructions shown to the model/user.
+# The workflow is a real JS state machine in lib/orchestrator.js, driven through
+# the `novel_orchestrate` tool. No prompt text is ever rendered to the user.
 #
-# The preset's plugin list mirrors the shipped `standard` preset (so the model
-# has file, shell, skill, subagent and web tools), plus a persona that tells the
-# model it is in Novel Mode. Workflow execution is skill-driven: the model loads
-# the matching `novel-*` skill from the / menu when the user describes the task.
+# The tool list mirrors the shipped `standard` preset (file, shell, skill,
+# subagent, web, compaction, goal, todo, present) so workers can do the jobs the
+# engine dispatches.
 
 - insert:
     - id: novel-mode
@@ -22,15 +23,6 @@
         description: 长篇小说工业化写作工作流：宪法、大纲、设计稿、正文、批量写作与全书校验，内置技能、子代理角色与校验脚本。
         order: 10
         plugins:
-          - id: persona
-            name: '@deepseek-ai/dsh-persona'
-            config:
-              suffix: Your working directory is {{cwd}}.
-              prefix: >-
-                你正处于「小说模式」。当前项目根目录的 .dsh/ 已就绪：包含长篇小说写作工作流所需的技能（novel-*）、子代理角色（agent-*）、模板、校验脚本与 config.yaml。
-                当用户要写小说、做设定、扩纲、设计章节、写正文、批量写作或校验时，用 skill 工具加载匹配的 novel-* 技能，并严格按其正文执行；
-                需要独立上下文时用 subagent 工具加载对应的 agent-* 技能。脚本一律以 `pwsh -NoProfile -File .dsh/scripts/<name>.ps1` 方式执行，禁止 -Command。
-                遵循 .dsh/AGENTS.md 的全部铁律（章节三位补零、先设计稿后正文、每章验证并同步状态、中文双引号、去AI味等）。
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
             config:

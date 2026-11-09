@@ -1,8 +1,8 @@
 {
   "name": "@yousen/dsh-novel-mode",
-  "version": "1.1.0",
-  "description": "Adds a 小说模式 (Novel Mode) entry to the DeepSeek Harness session mode dropdown: a selectable agent preset carrying the complete long-form novel writing workflow (constitution, outline, design, writing, batch, validation) with bundled skills, subagent roles, templates and validation scripts.",
-  "descriptionZh": "为 DeepSeek Harness 的会话模式下拉框新增可选「小说模式」：内置长篇小说写作工作流（宪法、大纲、设计、写作、批量、校验）所需的技能、子代理角色、模板与校验脚本。",
+  "version": "2.0.0",
+  "description": "小说模式 (Novel Mode): a deterministic workflow ENGINE for DeepSeek Harness — a code-executed state machine with script-gated stages, durable checkpoint/resume, adjudicated subagent workers, and zero user-visible prompts or errors. From one idea to a consistency-checked novel.",
+  "descriptionZh": "小说模式：DeepSeek Harness 的确定性写作引擎——代码执行的状态机、脚本硬门禁、可恢复断点、经证据裁决的子代理，全程不向用户展示提示词与错误。从一个想法到一本校验通过的小说。",
   "type": "module",
   "license": "MIT",
   "icon": "./icon.svg",
@@ -29,6 +29,7 @@
   },
   "files": [
     "index.js",
+    "lib/**",
     "cordis.patch.yml",
     "icon.svg",
     "locale/*.json",

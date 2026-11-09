@@ -6,14 +6,14 @@
 
 ---
 
-## 已自动完成的部分（2026-11-09）
+## 已自动完成的部分（2026-11-09 建仓，2026-11-10 v2.0.0 重建同步）
 
 用户授权使用了其 `.codebuddy/rules/MyRules.mdc` 中保存的 GitHub token，因此以下步骤**已由本会话自动完成**，无需用户手动操作：
 
-1. **创建并推送开源仓库**：`https://github.com/github-yousen/dsh-novel-mode`（Public、`main`、MIT、commit `173fe81`）。根 `package.json` 声明 `dsh.bundle`，旁边有 `cordis.patch.yml`；不含任何凭据。
+1. **创建并推送开源仓库**：`https://github.com/github-yousen/dsh-novel-mode`（Public、`main`、MIT）。根 `package.json` 声明 `dsh.bundle`，旁边有 `cordis.patch.yml`；不含任何凭据。v2.0.0 为确定性编排引擎重建版（具体 commit SHA 见仓库 `main` 分支，不写死旧 SHA）。
 2. **添加 topic**：`dsh-plugin`（另有 `deepseek-harness`、`novel`、`workflow`、`writing`、`chinese-fiction`）。
-3. **产出目录条目**：[`data/plugins/github-yousen__dsh-novel-mode.yml`](data/plugins/github-yousen__dsh-novel-mode.yml)——一个 YAML 文件，`url`/`name`/文件名三者一致，`category: workflow`，`description.en` 必填且已引号化，描述与代码相符、无夸大。
-4. **fork 上游并开 PR**：见下方「自动投稿结果」记录的 PR 链接。
+3. **产出目录条目**：[`data/plugins/github-yousen__dsh-novel-mode.yml`](data/plugins/github-yousen__dsh-novel-mode.yml)——一个 YAML 文件，`url`/`name`/文件名三者一致，`category: workflow`，`description.en` 必填且已引号化，描述与代码相符、无夸大；`icon:` 指向仓库内真实的 GitHub 托管 raster PNG。
+4. **fork 上游并开 PR**：见下方「自动投稿结果」记录的 PR 链接。产品重建后，fork 分支的 YAML 与 PR 正文均已同步更新。
 
 > ⚠️ **仓库年龄门槛（实测）**：`contributing.md` 的 CI 要求仓库创建满 **1 天**。PR #13689 的 `Submission gate` 目前只因此一项为 failure，输出原文：`repository is 0.0 days old (needs 1) — nothing to do: this check re-runs by itself and should clear in about 24h. No need to resubmit, push, or close and reopen; the age bar is the only thing failing here.` 其余 `check`（条目数、`dsh.bundle`、格式、lint、站点构建）均为 success。约 24 小时后 gate 自动重跑转绿，无需任何操作、不要重开 PR。这是唯一的固有延迟。
 
@@ -24,7 +24,7 @@
 - **Fork**：`github-yousen/awesome-dsh-plugin`（通过 GitHub REST API `POST /repos/{owner}/{repo}/forks` 创建）。
 - **分支**：`add-dsh-novel-mode`（基于 fork 的 `main`）。
 - **提交**：仅新增一个文件 `data/plugins/github-yousen__dsh-novel-mode.yml`（API `PUT /repos/.../contents/...`）。
-- **PR**：`awesome-dsh-plugin/awesome-dsh-plugin#<number>`（见文末「PR_STATE.md」或下方记录）。
+- **PR**：`awesome-dsh-plugin/awesome-dsh-plugin#13689`（https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689）。
 - 标题：[`PR_TITLE.md`](PR_TITLE.md)；正文：[`PR_BODY.md`](PR_BODY.md)。
 
 合并与站点同步由上游维护者完成；`awesome-dsh-plugin.com/plugins.json` 与 `dsh-plugin-catalog` 索引通常在合并后一天内更新，dshmarket 随之收录。这段延迟无法加速。

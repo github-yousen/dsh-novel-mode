@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Novel mode",
-    "description": "Adds 小说模式 (Novel Mode) as a selectable entry in the session mode dropdown, carrying the complete long-form novel writing workflow with 21 skills, subagent roles, templates and validation scripts."
+    "description": "From one idea to a finished, consistency-checked novel: a deterministic writing engine with script-gated stages, durable checkpoint/resume, adjudicated workers, and zero user-visible prompts or errors."
   }
 }

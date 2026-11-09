@@ -64,7 +64,7 @@ plugin_manager({
 dsh --profile <profile> --dump-config     # 应能看到 # == @yousen/dsh-novel-mode 这一层
 ```
 
-然后重启 dsh：在**模式下拉框**（工作区名旁）选择「小说模式」。选中后当前项目根目录会静默多出 `.dsh/`（skills / scripts / templates / config.yaml / charset.json / rules / AGENTS.md），随后在 `/` 菜单加载 `novel-*` 技能即可开始工作流。
+然后重启 dsh：在**模式下拉框**（工作区名旁）选择「小说模式」。选中后当前项目根目录会静默多出 `.dsh/`（skills / scripts / templates / config.yaml / charset.json / rules / AGENTS.md）。工作流由 `novel_orchestrate` 工具中的确定性状态机驱动：用户描述意图，引擎按 `STAGE_GRAPH` 决定阶段、用脚本门禁裁决、把断点写进 `.dsh/state/`；用户只看到结构化状态，不会看到提示词或错误。
 
 卸载：`dsh plugin --profile <profile> remove @yousen/dsh-novel-mode`，或用 `plugin_manager` 的 `remove_bundle`。
 
