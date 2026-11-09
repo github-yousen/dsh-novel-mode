@@ -2,87 +2,91 @@
 
 [中文说明](README.zh.md)
 
-A DSH plugin that turns a complete long-form novel writing workflow into a
-**mode**: install it, click **小说模式** (or type `/novel`), and the Harness
-enters a guided pipeline for planning, drafting and validating a novel.
+A DSH plugin that adds **小说模式 (Novel Mode)** as a selectable entry in the
+session's **mode dropdown** (the Agent-preset picker next to the workspace
+name). Pick it for a session and the complete long-form novel writing workflow
+is available; no custom button, slash command, or auto-started prompt is added.
 
 ## What it does
 
-Activating the mode does two things:
+The plugin contributes exactly two Loader rows:
 
-1. **Installs the working copy.** The bundled `assets/.dsh/` tree is copied into
-   the current project's `.dsh/` directory (idempotent — existing files are
-   never overwritten). That tree contains:
-   - **21 skills**: 9 workflow skills (`novel-constitution`, `novel-disassemble`,
-     `novel-import`, `novel-outline`, `novel-design`, `novel-write`,
-     `novel-batch`, `novel-validate`, `novel-design-export`), 9 subagent-role
-     skills (`agent-*`), `Humanizer-zh` (de-AI-writing rules), plus the optional
-     `site-fanqie` and `novel-downloader` integrations;
-   - **PowerShell/Python validation scripts** (word count, punctuation,
-     paragraph rhythm, summary/state sync, style fingerprint, continuity
-     helpers), **7 Markdown templates plus a `state.yaml` skeleton**
-     `.mdc` rules, and `AGENTS.md`.
-2. **Starts the workflow.** The model receives the workflow routing
-   instructions, inspects the project's `novel/` directory, and continues from
-   the correct stage — constitution → disassemble/import → outline → design →
-   write → batch → validate → design-export.
+1. **An Agent preset** declared with `@deepseek-ai/dsh-agent-preset`:
+   `id: novel`, display name `小说模式`, with a persona that tells the model it
+   is in Novel Mode and the standard tool set (file, shell, skill, subagent,
+   web, compaction, goal, todo, present). Workflow execution is skill-driven —
+   the user describes the intent and the model loads the matching `novel-*`
+   skill from the `/` menu.
+2. **A Host plugin** that quietly:
+   - registers the **21 workflow skills** as runtime skills (9+1 `novel-*`
+     workflow skills, 9 `agent-*` subagent roles, `humanizer-zh`, `site-fanqie`,
+     `novel-downloader`);
+   - when a session selects the `小说模式` preset, **silently materializes** the
+     bundled `.dsh/` working copy into that project's root (idempotent, never
+     overwrites existing files). No message is injected into the model.
 
-The skills' bodies are registered as runtime skills and loaded on demand, so
-the plugin adds only a short routing paragraph to each request instead of the
-whole workflow text.
+Why the working copy is materialized: all skills and all PowerShell scripts
+reference paths relative to the *project root* (`.dsh/scripts/...`,
+`.dsh/templates/...`, `.dsh/config.yaml`) and the scripts compute the project
+root from `$PSScriptRoot` by going up two levels. They therefore must sit at
+`<project>/.dsh/`.
+
+The bundled working copy contains 21 SKILL.md, 18 `.ps1` scripts, 19 `.py`
+scripts, 8 templates, `config.yaml`, `charset.json`, `AGENTS.md`, 2 `.mdc`
+rules, 9 agent role definitions, plus Humanizer-zh README/LICENSE. No
+credentials are bundled.
 
 ## Install
 
-From the GitHub repository (monorepo subdirectory):
-
 ```sh
-dsh plugin --profile <profile> add https://github.com/github-yousen/novel/tree/master/packages/novel-mode-plugin
+dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mode
 ```
 
 Or from a local checkout through the Harness plugin manager
 (`plugin_manager install_bundle` with the absolute path to this directory).
 
-After installation, **refresh the Web page** (Client bundles are loaded at
-boot). The `小说模式` button appears below the composer.
+After installation, **refresh the Web page / start a new session**. The new
+mode appears in the mode dropdown. Existing sessions keep the preset they
+started with.
 
 ## Requirements
 
-- DeepSeek Harness `0.2.x` (Web profile; the Client half needs the Web UI).
+- DeepSeek Harness `0.2.x` (Web profile; the mode dropdown is a Web UI).
 - **PowerShell 7 (`pwsh`)** and **Python 3.7+** on the host: the workflow
   scripts are invoked as `pwsh -NoProfile -File .dsh/scripts/<name>.ps1 ...`.
-- The target project directory must be the session's working directory. The
+- The target project directory should be the session's working directory. The
   workflow manages its own `novel/` tree (chapters, state, constitution).
 
 ## Usage
 
-| Action | Result |
-|---|---|
-| Click **小说模式** below the composer | Enters the mode and starts the full workflow |
-| Type `/novel [what you want to write]` | Same operation, with an optional goal |
-| Ask the model to write/plan/validate a novel | The `novel_mode` tool or the matching `novel-*` skill is loaded automatically |
+1. In a new session, open the **mode dropdown** (next to the workspace name)
+   and select **小说模式**.
+2. Describe the intent — "set up the constitution", "design chapter 15",
+   "write chapter 16", "validate the whole book" — and the model loads the
+   matching skill from the `/` menu, or pick a skill from that menu directly.
+3. Workflow stages: constitution → disassemble/import → outline → design →
+   writing → batch → validation → design-export.
 
-Workflow commands inside the mode are skills, not slash commands: describe the
-intent (e.g. "design chapter 15", "write chapter 16") and the model loads the
-matching skill, or pick a skill from the `/` menu in the composer.
+The bundled `AGENTS.md` carries the full rule set (three-digit chapter
+directories, design-before-draft, validate-and-sync each chapter, Chinese
+double quotes, de-AI-writing, `pwsh -NoProfile -File`).
 
 ## Credentials and privacy
 
 **No credentials are included.** The optional Fanqie integrations ship empty
 `fanqie-auth.json.template` and `fanqienovel_auth.json.template` files. If you
 want those integrations, copy each `.template` to the real filename and fill in
-your own values locally; those real filenames are git-ignored. `publish_result.json`,
-`package-lock.json`, bytecode caches and the large reverse-engineering artifacts
-are deliberately excluded.
+your own values locally; those real filenames are git-ignored.
+`publish_result.json`, `package-lock.json`, bytecode caches and the large
+reverse-engineering artifacts are deliberately excluded.
 
 ## Layout
 
 ```
-package.json          dsh.bundle + dsh.client manifest
-cordis.patch.yml      one Loader insert row
-index.js              Host half: skills, /novel command, novel_mode tool,
-                      .dsh/ materialization, prompt routing section
-client.js             Client half: the 小说模式 button
-locale/*.json         display metadata + UI copy
+package.json          dsh.bundle manifest (Host-only; no dsh.client)
+cordis.patch.yml      one Host row + one @deepseek-ai/dsh-agent-preset row
+index.js              Host half: skills + silent .dsh/ materialization
+locale/*.json         display metadata
 icon.svg              original book icon
 assets/.dsh/          the workflow working copy (materialized into projects)
 market/               ready-to-submit awesome-dsh-plugin catalog entry

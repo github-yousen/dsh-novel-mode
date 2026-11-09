@@ -1,10 +1,6 @@
 {
   "meta": {
     "title": "Novel mode",
-    "description": "Adds a one-click Novel mode to DeepSeek Harness. It installs the complete long-form novel writing workflow (constitution, outline, design, drafting, batch writing, validation) with 21 skills, subagent roles, templates and PowerShell validation scripts into the current project."
-  },
-  "novelMode": "Novel mode",
-  "starting": "Starting…",
-  "started": "Novel mode · running",
-  "tooltip": "Enter Novel mode: run the complete novel-writing workflow"
+    "description": "Adds 小说模式 (Novel Mode) as a selectable entry in the session mode dropdown, carrying the complete long-form novel writing workflow with 21 skills, subagent roles, templates and validation scripts."
+  }
 }

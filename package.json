@@ -1,8 +1,8 @@
 {
   "name": "@yousen/dsh-novel-mode",
-  "version": "1.0.0",
-  "description": "Novel Mode for DeepSeek Harness: a one-click mode that installs and runs the complete long-form novel writing workflow (constitution, outline, design, writing, batch, validation) with bundled skills, subagent roles, templates and validation scripts.",
-  "descriptionZh": "DeepSeek Harness 小说模式：一键进入长篇小说工业化写作工作流，内置宪法、大纲、设计、写作、批量、校验所需的技能、子代理角色、模板与校验脚本。",
+  "version": "1.1.0",
+  "description": "Adds a 小说模式 (Novel Mode) entry to the DeepSeek Harness session mode dropdown: a selectable agent preset carrying the complete long-form novel writing workflow (constitution, outline, design, writing, batch, validation) with bundled skills, subagent roles, templates and validation scripts.",
+  "descriptionZh": "为 DeepSeek Harness 的会话模式下拉框新增可选「小说模式」：内置长篇小说写作工作流（宪法、大纲、设计、写作、批量、校验）所需的技能、子代理角色、模板与校验脚本。",
   "type": "module",
   "license": "MIT",
   "icon": "./icon.svg",
@@ -22,7 +22,6 @@
   "homepage": "https://github.com/github-yousen/dsh-novel-mode",
   "exports": {
     ".": "./index.js",
-    "./client": "./client.js",
     "./package.json": "./package.json",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
@@ -30,7 +29,6 @@
   },
   "files": [
     "index.js",
-    "client.js",
     "cordis.patch.yml",
     "icon.svg",
     "locale/*.json",
@@ -44,16 +42,6 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
-    },
-    "client": {
-      "platform": "web",
-      "immediately": true,
-      "inject": [
-        "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-commands",
-        "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-api-remotes"
-      ]
     }
   },
   "engines": {

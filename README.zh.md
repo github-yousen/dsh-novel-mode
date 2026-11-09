@@ -2,83 +2,76 @@
 
 [English](README.md)
 
-把一整套长篇小说工业化写作工作流做成 DSH 的「**模式**」：装上插件后，点一下
-**小说模式**（或输入 `/novel`），Harness 就进入从选题、宪法、大纲、设计稿、
-正文、批量写作到全书校验的完整流程。
+把一整套长篇小说工业化写作工作流做成 DSH 的一个**可选模式**：装上插件后，
+会话工作区名旁边的**模式下拉框**里会多出「小说模式」。选中它，该会话即可使用
+完整写作流程——不额外添加按钮、斜杠命令，也不自动注入提示词。
 
 ## 它做了什么
 
-激活模式时做两件事：
+插件只贡献两行 Loader 声明：
 
-1. **安装工作副本**：把包内 `assets/.dsh/` 整棵树复制到当前项目的 `.dsh/`
-   目录（幂等，绝不覆盖已有文件）。其中包含：
-   - **21 个技能**：9 个工作流技能（`novel-constitution`、`novel-disassemble`、
-     `novel-import`、`novel-outline`、`novel-design`、`novel-write`、
-     `novel-batch`、`novel-validate`、`novel-design-export`）、9 个 `agent-*`
-     子代理角色技能、`Humanizer-zh` 去 AI 味规则，以及可选的 `site-fanqie`
-     与 `novel-downloader` 集成；
-   - **PowerShell / Python 校验脚本**（字数、标点、段落节奏、摘要/状态同步、
-     风格指纹、连续性辅助）、**7 个 Markdown 模板加一份 `state.yaml` 骨架**
-     （宪法、章节设计稿、摘要、状态、作品信息、拆书报告）、
-     `config.yaml`、`charset.json`、两条 `.mdc` 规则、
-     `AGENTS.md`。
-2. **启动工作流**：模型收到流程调度指令，检查项目的 `novel/` 目录，从正确的
-   阶段继续 —— 宪法 → 拆书/导入 → 大纲 → 设计 → 写作 → 批量 → 校验 →
-   设计稿导出。
+1. **一个 Agent Preset**（`@deepseek-ai/dsh-agent-preset`）：`id: novel`，显示名
+   `小说模式`，带一段说明「当前处于小说模式」的 persona，以及标准工具集（文件、
+   shell、技能、子代理、网页、压缩、goal、todo、present）。**工作流由技能驱动**：
+   用户描述意图，模型从 `/` 菜单加载匹配的 `novel-*` 技能执行。
+2. **一个 Host 插件**，静默做两件事：
+   - 把 **21 个工作流技能**注册为运行时技能（10 个 `novel-*` 工作流技能、
+     9 个 `agent-*` 子代理角色、`humanizer-zh`、`site-fanqie`、`novel-downloader`）；
+   - 当会话选中「小说模式」时，**静默**把随包 `.dsh/` 工作副本物化到该项目根目录
+     （幂等，绝不覆盖已有文件）。**不向模型注入任何消息**。
 
-技能正文以运行时技能注册、按需加载，因此每轮请求只多一段很短的路由说明，
-不会把整套工作流塞进上下文。
+为什么必须物化：所有技能与 PowerShell 脚本都按「相对项目根」引用路径
+（`.dsh/scripts/...`、`.dsh/templates/...`、`.dsh/config.yaml`），脚本用
+`$PSScriptRoot` 上两级推算项目根，因此 assets 必须落在 `<项目根>/.dsh/`。
+
+工作副本包含 21 个 SKILL.md、18 个 `.ps1`、19 个 `.py`、8 个模板、`config.yaml`、
+`charset.json`、`AGENTS.md`、2 条 `.mdc` 规则、9 个角色定义，以及 Humanizer-zh 的
+README/LICENSE。**不含任何凭据**。
 
 ## 安装
 
-从 GitHub 仓库（monorepo 子目录）安装：
-
 ```sh
-dsh plugin --profile <profile> add https://github.com/github-yousen/novel/tree/master/packages/novel-mode-plugin
+dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mode
 ```
 
 或从本地检出目录安装（Harness 插件管理器的 `plugin_manager install_bundle`，
 `target` 填本目录绝对路径）。
 
-安装后**刷新 Web 页面**（Client 半在启动时加载），composer 下方会出现
-「小说模式」按钮。
+安装后**刷新 Web 页面 / 新建会话**，模式下拉框里就会出现「小说模式」。已有会话
+保留其启动时选定的预设。
 
 ## 运行要求
 
-- DeepSeek Harness `0.2.x`（Web profile；Client 半依赖 Web UI）。
+- DeepSeek Harness `0.2.x`（Web profile；模式下拉框属于 Web UI）。
 - 主机安装 **PowerShell 7（`pwsh`）** 与 **Python 3.7+**：脚本统一以
   `pwsh -NoProfile -File .dsh/scripts/<脚本>.ps1` 调用。
-- 目标小说项目目录应为会话的工作目录；工作流自行维护项目下的 `novel/` 树
-  （章节、状态、宪法）。
+- 目标小说项目目录应为会话工作目录；工作流自行维护项目下的 `novel/` 树。
 
 ## 使用
 
-| 操作 | 效果 |
-|---|---|
-| 点击 composer 下方的 **小说模式** | 进入模式并启动完整工作流 |
-| 输入 `/novel [这次想写什么]` | 同一操作，可附带目标说明 |
-| 直接说「写第 15 章」「校验全书」 | 自动调用 `novel_mode` 工具或匹配对应 `novel-*` 技能 |
+1. 新建会话，点开工作区名旁的**模式下拉框**，选择 **小说模式**。
+2. 描述意图——「建立宪法」「设计第 15 章」「写第 16 章」「全书校验」——模型会从
+   `/` 菜单加载匹配的技能；也可直接在 `/` 菜单点选技能。
+3. 流程阶段：宪法 → 拆书/导入 → 大纲 → 设计 → 写作 → 批量 → 校验 → 设计稿导出。
 
-模式内部是**技能**而非斜杠命令：直接描述意图（如「设计第 15 章」「写第 16 章」），
-模型会加载匹配的技能；也可在输入框 `/` 菜单里点选技能。
+随包 `AGENTS.md` 载有全部铁律（章节三位补零、先设计稿后正文、每章验证并同步状态、
+中文双引号、去 AI 味、`pwsh -NoProfile -File`）。
 
 ## 凭据与隐私
 
 **包内不含任何凭据。** 可选的番茄站点集成只提供空的
-`fanqie-auth.json.template` / `fanqienovel_auth.json.template`；如需使用，
-把 `.template` 复制为真实文件名并在本地填写，这些真实文件名已被 git 忽略。
+`fanqie-auth.json.template` / `fanqienovel_auth.json.template`；如需使用，把
+`.template` 复制为真实文件名并在本地填写，这些真实文件名已被 git 忽略。
 `publish_result.json`、`package-lock.json`、字节码缓存与体积很大的逆向分析文件
 均已刻意剔除。
 
 ## 目录结构
 
 ```
-package.json          dsh.bundle + dsh.client 清单
-cordis.patch.yml      Loader insert 行
-index.js              Host 半：技能、/novel 命令、novel_mode 工具、
-                      .dsh/ 物化、prompt 路由段
-client.js             Client 半：小说模式按钮
-locale/*.json         展示元数据 + UI 文案
+package.json          dsh.bundle 清单（纯 Host，无 dsh.client）
+cordis.patch.yml      一行 Host 声明 + 一行 @deepseek-ai/dsh-agent-preset 声明
+index.js              Host 半：技能注册 + 静默 .dsh/ 物化
+locale/*.json         展示元数据
 icon.svg              原创书本图标
 assets/.dsh/          工作流工作副本（物化到各小说项目）
 market/               可直接提交的 awesome-dsh-plugin 目录条目

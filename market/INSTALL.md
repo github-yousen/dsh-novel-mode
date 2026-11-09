@@ -64,7 +64,7 @@ plugin_manager({
 dsh --profile <profile> --dump-config     # 应能看到 # == @yousen/dsh-novel-mode 这一层
 ```
 
-然后重启 dsh：会话输入框出现「小说模式」按钮，或在输入框输入 `/novel`。进入模式后当前项目根目录会多出 `.dsh/`（skills / scripts / templates / config.yaml / charset.json / rules / AGENTS.md）。
+然后重启 dsh：在**模式下拉框**（工作区名旁）选择「小说模式」。选中后当前项目根目录会静默多出 `.dsh/`（skills / scripts / templates / config.yaml / charset.json / rules / AGENTS.md），随后在 `/` 菜单加载 `novel-*` 技能即可开始工作流。
 
 卸载：`dsh plugin --profile <profile> remove @yousen/dsh-novel-mode`，或用 `plugin_manager` 的 `remove_bundle`。
 
