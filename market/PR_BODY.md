@@ -1,6 +1,6 @@
 - [x] I added **one file** at `data/plugins/github-yousen__dsh-novel-mode.yml` — that single file is the whole submission.
 - [x] My repo's root `package.json` declares **`dsh.bundle`** (`dsh.bundle.patch: ./cordis.patch.yml`, plus `dsh.client` for the browser half), with a `cordis.patch.yml` beside it.
-- [x] My repo is at least **1 day old** — created 2026-11-09 (the age gate re-runs automatically; a freshly created repo qualifies by itself once a day has passed).
+- [ ] My repo is at least **1 day old** — created 2026-11-09, so the age gate is currently `0.0 days old (needs 1)`. Upstream CI states this check re-runs by itself and clears in about 24h; no resubmission, push, or reopening is needed. Marking unchecked until it clears.
 - [x] `category: workflow` — a long-form novel writing workflow / mode plugin.
 - [x] Description states what the plugin does, no superlatives; its claims are checked against the shipped code.
 - [x] My repo has the `dsh-plugin` topic.
