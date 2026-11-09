@@ -59,9 +59,23 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 Then **refresh the page**, open the mode dropdown, pick **小说模式**, and describe
 what you want to write. The engine takes it from there.
 
+### 30-second try it
+
+```text
+You: 帮我从零搭一个都市悬疑的世界观，再写第 1 章
+Model → novel_orchestrate(start → select-branch constitution → …)
+You see: 阶段：constitution · 就绪   →   阶段：write · 第 1 章 · 就绪
+```
+
+Behind that one-line status the engine has already picked the branch, checked
+entry artifacts, run the design/chapter validators, adjudicated the review
+worker and written a versioned checkpoint. Kill the session at chapter 47 of
+100 and it resumes at 47 — no prompt to re-paste, no state to reconstruct by
+hand.
+
 **Requirements**: DeepSeek Harness 0.2.x (Web profile), PowerShell 7 (`pwsh`),
-Python 3.7+. If `pwsh` is absent, gates degrade to recorded `DEGRADED` verdicts
-instead of crashing — the engine never silently passes.
+Python 3.7+. If `pwsh` is absent the gate records a `DEGRADED` verdict and the
+run **pauses** — it never silently passes and never crashes.
 
 ## Architecture (short)
 
