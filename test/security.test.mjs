@@ -284,5 +284,15 @@ check('publicGate exposes only codes + failedCount, never failures array', () =>
   excludes(body, 'failures:', 'publicGate must not project a failures field');
   includes(body, 'failedCount', 'publicGate projects only a count');
 });
+check('durable structured log never stores .ps1 script paths (NG-3 defense in depth)', () => {
+  let s = engine.createState({ project: '/p' });
+  s.stage = 'design'; s.status = 'running'; s.chapter = 1;
+  const r = engine.advance(s, { type: 'gate-fail', failures: ['script-exit-3'], at: 1 });
+  ok(r.ok, 'gate-fail accepted');
+  const serialized = engine.serializeState(r.state);
+  excludes(serialized, '.ps1', 'no script path in persisted state');
+  excludes(serialized, 'SECRET', 'no raw stderr in persisted state');
+  ok(r.state.log.length > 0, 'structured log present');
+});
 
 finish(SUITE);
