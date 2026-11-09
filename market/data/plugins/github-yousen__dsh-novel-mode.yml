@@ -1,18 +1,13 @@
 # ONE-FILE catalog submission for awesome-dsh-plugin/awesome-dsh-plugin.
 # Commit this file into your FORK at exactly:
-#   data/plugins/github-yousen__novel--packages-novel-mode-plugin.yml
+#   data/plugins/github-yousen__dsh-novel-mode.yml
 # Do NOT hand-edit the generated READMEs — this file is the whole submission.
 #
-# Monorepo subpackage: the plugin lives at packages/novel-mode-plugin/ inside
-# github-yousen/novel, whose default branch is `master` (NOT `main`).
-# url / name / filename all encode the same subdirectory:
-#   path  packages/novel-mode-plugin
-#   slug  packages-novel-mode-plugin
-url: https://github.com/github-yousen/novel/tree/master/packages/novel-mode-plugin
-name: 'github-yousen/novel#packages-novel-mode-plugin'
+# Standalone repository: https://github.com/github-yousen/dsh-novel-mode
+# Public, default branch `main`, MIT, topic `dsh-plugin`, created 2026-11-09.
+url: https://github.com/github-yousen/dsh-novel-mode
+name: github-yousen/dsh-novel-mode
 category: workflow
-# `name` is quoted because it contains `#` (YAML's comment marker) — harmless
-# here, but quoting removes any parser ambiguity for the monorepo slug.
 # Both descriptions are quoted: the en string contains ": " (colon + space),
 # which unquoted would be parsed as a nested YAML key.
 description:
@@ -22,9 +17,9 @@ description:
 #   (png / jpg / jpeg / webp), drawn at ~96px, square preferred. SVG is REFUSED
 #   and third-party image hosts are REFUSED. The plugin ships icon.svg for the
 #   DSH UI, but an .svg cannot be used as the catalog `icon:`. To add a tile,
-#   commit a square png/jpg/webp inside this repo and set, for example:
-#   icon: https://raw.githubusercontent.com/github-yousen/novel/master/packages/novel-mode-plugin/assets/icon-180.png
+#   commit a square png/jpg/webp inside the repo and set, for example:
+#   icon: https://raw.githubusercontent.com/github-yousen/dsh-novel-mode/main/assets/icon-180.png
 # tarball: OMITTED. Optional; only a GitHub Release-hosted https .tgz is accepted.
 #   None is published yet. If you later attach a prebuilt tarball, keep the asset
 #   name version-free with latest/download/ (or pin the release tag), e.g.
-#   tarball: https://github.com/github-yousen/novel/releases/latest/download/novel-mode-plugin.tgz
+#   tarball: https://github.com/github-yousen/dsh-novel-mode/releases/latest/download/dsh-novel-mode.tgz

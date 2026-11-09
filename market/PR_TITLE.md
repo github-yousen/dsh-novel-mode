@@ -1,1 +1,1 @@
-Add github-yousen/novel#packages-novel-mode-plugin (小说模式 / Novel Mode)
+Add github-yousen/dsh-novel-mode (小说模式 / Novel Mode)

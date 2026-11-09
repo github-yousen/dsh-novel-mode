@@ -1,7 +1,7 @@
 # 安装「小说模式」(Novel Mode)
 
-> 插件是 `github-yousen/novel` 的 monorepo 子包，路径 `packages/novel-mode-plugin/`，默认分支 **`master`**（不是 `main`）。
-> 前提：STEP 0（`SUBMISSION_STEPS.md`）已把插件推到该仓库；从源码安装前，仓库里必须真的有 `packages/novel-mode-plugin/package.json`。
+> 独立仓库：https://github.com/github-yousen/dsh-novel-mode （Public，默认分支 **`main`**，MIT）。
+> 包根目录就是插件本体（`package.json` / `cordis.patch.yml` / `index.js` / `client.js` / `assets/` 都在仓库根）。
 
 ---
 
@@ -12,41 +12,37 @@
 - 一个**可写的小说项目目录**：进入模式时插件会把随包的 `.dsh/` 工作副本物化到当前项目根目录（已存在的文件不会被覆盖）。
 - 插件本体**是纯 JavaScript、无构建脚本、无 npm 依赖**（只用 `ctx` / `inject` 取宿主服务），所以从 git 安装**不需要** `prepare` 脚本，也**不需要** pnpm `allowBuilds` / `approvedBuilds` 构建授权。
 
-`engines.dsh`：`>=0.2.0-rc.1 <0.3.0-0 || >=0.2.1-rc.1 <0.3.0-0`（安装时宿主会复核）。
+`engines.dsh`：`>=0.2.0-rc.1 <0.2.0 || >=0.2.1-rc.1 <0.3.0-0`（安装时宿主会复核）。
 
 ---
 
-## 方法 A — 从 GitHub 源码（目录 URL，即目录条目里的 `url`）
+## 方法 A — 从 GitHub 源码（仓库 URL，即目录条目里的 `url`）
 
 ```sh
-dsh plugin --profile <profile> add https://github.com/github-yousen/novel/tree/master/packages/novel-mode-plugin
+dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mode
 ```
 
 `<profile>` 是**必填**的（`dsh plugin` 只是把参数转发给 profile 目录下的 pnpm），例如 `--profile desktop`。
 
-> 说明：这条 URL 就是目录条目 `data/plugins/...yml` 里记录的 `url`，也是市场卡片「从源码安装」所依据的来源。若你的 `dsh` 把它原样转给 pnpm，pnpm 需要的是 **git spec 而非网页 tree URL**（见方法 B）；市场 UI 的安装按钮会自行把子目录解析成正确的 git spec。发布后的推荐安装方式其实是市场卡片，而非手敲这条 URL。
-
-## 方法 B — git spec 变体（pnpm 直接可用的形式）
+## 方法 B — git spec 变体（可钉住提交）
 
 ```sh
-# GitHub 简写（分支 master）
-dsh plugin --profile <profile> add "github:github-yousen/novel#master&path:packages/novel-mode-plugin"
+# GitHub 简写（分支 main）
+dsh plugin --profile <profile> add "github:github-yousen/dsh-novel-mode#main"
 
 # 等价的 git+https 形式
-dsh plugin --profile <profile> add "git+https://github.com/github-yousen/novel.git#master&path:packages/novel-mode-plugin"
+dsh plugin --profile <profile> add "git+https://github.com/github-yousen/dsh-novel-mode.git#main"
 
 # 更安全：钉住提交（推荐，防止之后 push 改变被安装的代码）
-dsh plugin --profile <profile> add "git+https://github.com/github-yousen/novel.git#<40-hex-sha>&path:packages/novel-mode-plugin"
+dsh plugin --profile <profile> add "git+https://github.com/github-yousen/dsh-novel-mode.git#<40-hex-sha>"
 ```
 
-- `&path:packages/novel-mode-plugin` 是 pnpm/DSH 用来指向 monorepo 子包的写法；DSH 的 format-1 索引也是用 `git+<url>.git#<commit>` + `&path:<directory>` 安装 git 版本。
-- **一定要给整个 spec 加引号**：`&` 在 shell 里有特殊含义。
-- ⚠️ **Windows 已知坑**（DSH Discussion [#5815](https://github.com/deepseek-ai/deepseek-harness/discussions/5815)，0.1.2-rc.1 起、0.1.3-alpha.1 仍在）：`dsh plugin add` 在 Windows 通过 `cmd.exe`（`shell: true`）拉起 pnpm，`&` 会被当作命令分隔符，导致 `&path:...` 被吞掉、**静默装成仓库根包**并以 0 退出。本机正是 Windows。因此在 Windows 上优先用**方法 C**（本地绝对路径），或在安装后用 `dsh --profile <profile> --dump-config` / 检查 profile 的 `package.json` 确认装进去的是 `@yousen/dsh-novel-mode` 而不是仓库根包。
+- 独立仓库**不需要** `&path:` 子目录参数，因此绕开了 Windows `cmd.exe` 把 `&` 当命令分隔符、静默装成根包的已知坑（DSH Discussion [#5815](https://github.com/deepseek-ai/deepseek-harness/discussions/5815)）。
 - 安装后**重启 dsh / 重新加载 profile**：`package.json` 与 `cordis.patch.yml` 的变更在下次入口启动/启动时才被观察到。
 
 ## 方法 C — 本地安装（`plugin_manager`，绝对路径）
 
-最可靠、不依赖网络/推送的方式，适合本机验证：
+最可靠、不依赖网络的方式，适合本机验证：
 
 ```
 plugin_manager({
