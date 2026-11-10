@@ -251,9 +251,15 @@ check('gate() never returns raw stderr/stdout (classified failures only)', () =>
   includes(engineText, '`script-exit-${code}`', 'classified failure format');
   eq(engine.normalizeChapter(7).ok, true);
 });
-check('Host adapter contains no prompt/persona/systemPrompt injection', () => {
+check('Host adapter has no persona / workflow-brief injection (only ONE short tool-routing rule)', () => {
   const combined = indexText + '\n' + readText(join(ROOT, 'cordis.patch.yml'));
-  excludes(indexText, 'systemPrompt', 'no systemPrompt section registered');
+  // A single named systemPrompt.section for tool routing is allowed (and needed
+  // so the model knows to call novel_orchestrate). What is FORBIDDEN is a
+  // persona prefix/suffix or any workflow instructions shown to the user/model.
+  const routeSections = [...indexText.matchAll(/name:\s*'novel:mode-route'/g)].length;
+  eq(routeSections, 1, 'exactly one short routing section');
+  const route = indexText.slice(indexText.indexOf("name: 'novel:mode-route'"));
+  excludes(route.slice(0, 1600), '你正处于', 'no "you are in mode" persona dump');
   excludes(indexText, 'agent.inject(', 'no message injection');
   excludes(indexText, 'agent.followup(', 'no forced turn injection');
   excludes(combined, 'prefix:', 'no persona prefix in patch');
