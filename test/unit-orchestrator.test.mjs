@@ -229,6 +229,19 @@ check('validateTransition rejects non-object events', () => {
   const s = stateAt('design');
   for (const ev of [null, undefined, 'gate-pass', 5, []]) eq(e.validateTransition(s, ev).ok, false);
 });
+check('F6: start from a paused mid-run resumes WITHOUT wiping progress', () => {
+  const s = stateAt('batch');
+  s.status = 'paused'; s.chapter = 47; s.batchStep = 'D3'; s.totalChapters = 100;
+  const r = e.advance(s, { type: 'start', at: 1 });
+  ok(r.ok, 'start from paused is legal');
+  eq(r.state.status, 'running', 'resumes to running');
+  eq(r.state.stage, 'batch', 'stage preserved');
+  eq(r.state.chapter, 47, 'chapter 47 preserved');
+  eq(r.state.batchStep, 'D3', 'sub-step D3 preserved');
+  eq(r.state.totalChapters, 100, 'totalChapters preserved');
+  const idle = stateAt('bootstrap'); idle.status = 'idle';
+  eq(e.advance(idle, { type: 'start', at: 1 }).state.stage, 'bootstrap', 'fresh start still begins at bootstrap');
+});
 check('step-done advances ONLY gate-less BATCH sub-steps; a full chapter loops and batch exits (F1/F3)', () => {
   // 100-chapter loop: drive all 15 sub-steps with the correct event per type.
   const s = stateAt('batch');
