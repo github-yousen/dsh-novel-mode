@@ -1,6 +1,6 @@
 {
   "name": "@yousen/dsh-novel-mode",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "小说模式 (Novel Mode): a deterministic workflow ENGINE for DeepSeek Harness — a code-executed state machine with script-gated stages, durable checkpoint/resume, adjudicated subagent workers, and zero user-visible prompts or errors. From one idea to a consistency-checked novel.",
   "descriptionZh": "小说模式：DeepSeek Harness 的确定性写作引擎——代码执行的状态机、脚本硬门禁、可恢复断点、经证据裁决的子代理，全程不向用户展示提示词与错误。从一个想法到一本校验通过的小说。",
   "type": "module",
