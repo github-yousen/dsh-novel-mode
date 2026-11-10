@@ -34,7 +34,7 @@ SubAgent 启动后加载：
 1. `novel/source/report.md` — 拆书总报告（~2000字，骨架DNA）
 2. 用户换皮设定（~500字，主流程传入）
 3. 类型预设模板（~300字，按 genre 加载对应预设）
-4. 宪法模板 `.codebuddy/templates/constitution/`（~300字）
+4. 宪法模板 `.dsh/templates/constitution/`（~300字）
 5. 章节级规划结构要求（~300字，从当前项目规则中归纳）
 
 总上下文 ≈ 3500字（非常轻量）
@@ -76,7 +76,7 @@ SubAgent 启动后加载：
 4) 生成新角色 — `novel/constitution/characters/[角色名].md`：
    
    根据拆书报告的角色功能矩阵，为每个功能位创建角色：
-   - 🔴 **必须读取模板** `.codebuddy/templates/constitution/characters/_template.md`，严格按照模板格式生成
+   - 🔴 **必须读取模板** `.dsh/templates/constitution/characters/_template.md`，严格按照模板格式生成
    - 保留功能定位（导师/宿敌/红颜...）和行为模式标签
    - 填入用户在 Phase 5 提供的新角色信息
    - 每个角色：性格内核、说话风格、口头禅、外貌特征、初始位置、关系网、状态
