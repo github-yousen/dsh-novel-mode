@@ -198,6 +198,7 @@ function expectedAllowed(stage, ev) {
   if (ev.type === 'start') return false; // we use status 'running' for the matrix
   if (ev.type === 'select-branch') return stage === 'bootstrap' && e.BOOTSTRAP_BRANCHES.includes(ev.branch);
   if (ev.type === 'batch-step') return stage === 'batch';
+  if (ev.type === 'step-done') return false; // matrix states have no gate-less batchStep; dedicated test below
   if (['gate-pass', 'gate-fail', 'skip'].includes(ev.type)) return stage !== 'bootstrap';
   // pause/retry/resume/fail allowed from running in most stages
   return true;
@@ -227,6 +228,38 @@ check('validateTransition rejects every unknown event type on every stage', () =
 check('validateTransition rejects non-object events', () => {
   const s = stateAt('design');
   for (const ev of [null, undefined, 'gate-pass', 5, []]) eq(e.validateTransition(s, ev).ok, false);
+});
+check('step-done advances ONLY gate-less BATCH sub-steps; a full chapter loops and batch exits (F1/F3)', () => {
+  // 100-chapter loop: drive all 15 sub-steps with the correct event per type.
+  const s = stateAt('batch');
+  s.batchStep = 'O'; s.chapter = 1; s.totalChapters = 100;
+  let cur = s;
+  for (let guard = 0; guard < 20 && cur.stage === 'batch'; guard += 1) {
+    const step = e.BATCH_SUBSTEPS.find(x => x.id === cur.batchStep);
+    const type = step?.gate ? 'gate-pass' : 'step-done';
+    const r = e.advance(cur, { type, at: 1 });
+    ok(r.ok, `step ${cur.batchStep} via ${type} must advance`);
+    if (!r.ok) break;
+    cur = r.state;
+    if (cur.stage === 'batch' && cur.chapter === 2) break; // reached next chapter
+  }
+  eq(cur.chapter, 2, 'one full 15-step chapter advances to chapter 2');
+  eq(cur.batchStep, 'O', 'next chapter restarts at sub-step O');
+  // Gate-less steps must NEVER be advanceable via a fabricated gate-pass.
+  const g = stateAt('batch'); g.batchStep = 'A'; g.chapter = 1; g.totalChapters = 3;
+  eq(e.validateTransition(g, { type: 'step-done' }).ok, true, 'A (gate-less) accepts step-done');
+  eq(e.validateTransition(g, { type: 'gate-pass' }).ok, true, 'gate-pass still structurally legal'); // gate verdict is enforced in Host
+  const h = stateAt('batch'); h.batchStep = 'A1'; h.chapter = 1; h.totalChapters = 3;
+  eq(e.validateTransition(h, { type: 'step-done' }).ok, false, 'A1 (has validator) rejects step-done');
+  // A gate-less review step's verify path works with evidence (F3).
+  const r = e.adjudicatedGate({ ok: true, status: 'PASS', skipped: true, reason: 'no-validator', failures: [] },
+    [{ verdict: 'PASS', evidenceRefs: ['novel/outline.md'] }],
+    { resolve: () => true });
+  eq(r.ok, true, 'gate-less review step adjudicates on worker evidence alone');
+  eq(r.reason, 'evidence-adjudicated-pass');
+  const noEvidence = e.adjudicatedGate({ ok: true, status: 'PASS', skipped: true, reason: 'no-validator', failures: [] },
+    [{ verdict: 'PASS', evidenceRefs: [] }], { resolve: () => false });
+  eq(noEvidence.ok, false, 'PASS without evidence still refused');
 });
 check('validateTransition: start only legal from idle/blocked/paused', () => {
   for (const status of e.STATUSES) {
@@ -578,6 +611,34 @@ check('gate: uses -NoProfile -File and -Chapter <int>, NEVER -Command', () => {
   excludes(args.join(' '), '-c ');
   ok(args.includes('.dsh/scripts/validate-design.ps1'), 'validator path');
   ok(args.includes('-Chapter') && args.includes('15'), 'integer chapter arg');
+});
+check('gate: per-script argv contracts match the REAL PowerShell param blocks (R5 regression)', () => {
+  // validate-outline.ps1 takes -StartChapter/-EndChapter or -All, NOT -Chapter.
+  // analyze-source.ps1 takes -InputDir/-Mode/-SourceDir/-TargetFile, NO chapter.
+  // A blanket `-Chapter N` fails PowerShell parameter binding and stalls the gate.
+  const files = { '/p/novel/outline.md': 'x', '/p/novel/constitution/core.md': 'x' };
+  const spawn = () => ({ status: 0 });
+  const run = (stage, extra = {}) => {
+    const s = stateAt(stage); Object.assign(s, extra);
+    const io = mockIo(files, { spawnSync: spawn });
+    e.gate(stage, io, '/p', s);
+    return io.calls.spawnSync[0][1].join(' ');
+  };
+  const outlineAll = run('outline');
+  excludes(outlineAll, '-Chapter', 'validate-outline.ps1 must not receive -Chapter');
+  includes(outlineAll, '-All', 'whole-outline validation uses -All');
+  const outlineCh = run('outline', { chapter: 15 });
+  includes(outlineCh, '-StartChapter 15', 'chapter-scoped outline uses -StartChapter');
+  includes(outlineCh, '-EndChapter 15', 'chapter-scoped outline uses -EndChapter');
+  excludes(outlineCh, '-Chapter', 'still no bare -Chapter');
+  const dis = run('disassemble', { chapter: 3 });
+  excludes(dis, '-Chapter', 'analyze-source.ps1 must not receive -Chapter');
+  const ch = run('design', { chapter: 7 });
+  includes(ch, '-Chapter 7', 'chapter-scoped validators keep -Chapter');
+  // Direct contract helper.
+  deepEq(e.gateArgsFor('.dsh/scripts/validate-outline.ps1', {}), ['-All']);
+  deepEq(e.gateArgsFor('.dsh/scripts/analyze-source.ps1', { chapter: 9 }), []);
+  deepEq(e.gateArgsFor('.dsh/scripts/validate-chapter.ps1', { chapter: 9 }), ['-Chapter', '9']);
 });
 check('gate: runner unavailable / throw -> DEGRADED skipped, never a silent PASS', () => {
   // B3: DEGRADED must carry ok=false so no caller can mistake it for a pass.
