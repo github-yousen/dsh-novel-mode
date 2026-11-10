@@ -8,7 +8,7 @@
 
 ## 已自动完成的部分（2026-11-09 建仓，2026-11-10 v2.0.0 重建同步）
 
-用户授权使用了其 `.codebuddy/rules/MyRules.mdc` 中保存的 GitHub token，因此以下步骤**已由本会话自动完成**，无需用户手动操作：
+以下发布步骤**已通过 GitHub API 自动完成**（使用了用户授权的凭据，未在此记录凭据位置或取值），无需用户手动操作：
 
 1. **创建并推送开源仓库**：`https://github.com/github-yousen/dsh-novel-mode`（Public、`main`、MIT）。根 `package.json` 声明 `dsh.bundle`，旁边有 `cordis.patch.yml`；不含任何凭据。v2.0.0 为确定性编排引擎重建版（具体 commit SHA 见仓库 `main` 分支，不写死旧 SHA）。
 2. **添加 topic**：`dsh-plugin`（另有 `deepseek-harness`、`novel`、`workflow`、`writing`、`chinese-fiction`）。
