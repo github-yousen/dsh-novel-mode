@@ -50,7 +50,7 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 # target 填本目录绝对路径
 ```
 
-然后**刷新页面**，打开模式下拉框选「小说模式」，说出你想写什么，剩下的交给引擎。
+然后**重启 DeepSeek Harness**（仅刷新页面不会重新加载新增的 `cordis.patch.yml` 预设行），打开模式下拉框选「小说模式」，说出你想写什么，剩下的交给引擎。
 
 ### 30 秒上手
 
@@ -65,7 +65,7 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 回来仍从第 47 章继续——不用重贴提示词，不用手工重建状态。
 
 **运行要求**：DeepSeek Harness 0.2.x（Web profile）、PowerShell 7（`pwsh`）、
-Python 3.7+。若缺少 `pwsh`，门禁会记为 `DEGRADED` 并**暂停**运行——
+Python 3.7+。开始前请先打开（或新建）一个空目录作为小说项目工作区——该模式会把 `.dsh/` 物化到当前工作目录。若缺少 `pwsh`，门禁会记为 `DEGRADED`、状态提示「需要准备运行环境」并**暂停**运行——
 绝不静默放行，也绝不崩溃。
 
 ## 架构速览
