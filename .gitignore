@@ -4,7 +4,8 @@ __pycache__/
 *.pyc
 *.log
 .DS_Store
-.dsh/
+# Anchored: ignore ONLY the root runtime .dsh/, NOT the shipped assets/.dsh/ tree.
+/.dsh/
 assets/.dsh/scripts/fanqie-auth.json
 assets/.dsh/skills/site-fanqie/fanqienovel_auth.json
 assets/.dsh/skills/site-fanqie/publish_result.json
