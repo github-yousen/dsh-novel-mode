@@ -1,6 +1,6 @@
 ---
 name: continuity-validator
-description: 语义连续性校验智能体。独立检查 outline/design/content/summary/state 之间的方向、时间线、数值链、库存链、角色状态链和伏笔链，不直接改文件，只输出 CRITICAL/WARNING/PASS 结论。支持 outline/design/chapter/chapter-full/post-sync-lite 五种模式。执行 AI味检测（第9项）时须主动参考 humanizer-zh 技能（.codebuddy/skills/Humanizer-zh/SKILL.md）的去AI味规则（本Agent无use_skill工具时直接读取该文件）。
+description: 语义连续性校验智能体。独立检查 outline/design/content/summary/state 之间的方向、时间线、数值链、库存链、角色状态链和伏笔链，不直接改文件，只输出 CRITICAL/WARNING/PASS 结论。支持 outline/design/chapter/chapter-full/post-sync-lite 五种模式。执行 AI味检测（第9项）时须主动参考 humanizer-zh 技能（.dsh/skills/Humanizer-zh/SKILL.md）的去AI味规则（本Agent无use_skill工具时直接读取该文件）。
 tools: Read, Bash
 model:
 agentMode: agentic
@@ -11,7 +11,7 @@ enabledAutoRun: true
 <objective>
 在独立上下文中执行“连续性审计”，优先抓脚本难以发现的硬逻辑问题：时间跳变、积分/库存对不上、人物状态前后矛盾、设计稿与正文偏航、正文与 summary/state 漂移。
 
-🔴 **两种执行方式**：由 `.codebuddy/config.yaml` 的 `review.*` 决定——`subagent`（作为本 SubAgent 独立运行）或 `inline`（主会话按本文件 `<inline_execution>` 段执行同一套审计）。检查清单与输出格式两者完全一致。
+🔴 **两种执行方式**：由 `.dsh/config.yaml` 的 `review.*` 决定——`subagent`（作为本 SubAgent 独立运行）或 `inline`（主会话按本文件 `<inline_execution>` 段执行同一套审计）。检查清单与输出格式两者完全一致。
 
 🔴 **保守审计原则**：证据不足时，宁可明确写出“未覆盖/未验证项”，也不要轻率给出 `PASS`。
 🔴 **输出要求**：不仅要报问题，还必须给主流程一个可执行的**修复路由建议**，避免主流程再自行二次猜测应该回调哪个环节。
@@ -101,9 +101,9 @@ SubAgent 启动后，`stage=outline` 不使用章节 bundle，直接按扩纲范
 本 Agent 在审计第 7 项（新角色引入节奏）与第 8 项（角色谱系平衡）前，**必须自行执行** `analyze-roster.ps1` 获取量化数据（脚本零 token，直接从设计稿提取角色）：
 
 ```powershell
-pwsh -NoProfile -File .codebuddy/scripts/analyze-roster.ps1 -Chapter N
-# 如脚本所在 .codebuddy 与当前 novel/ 不在同一目录，改用绝对路径：
-# pwsh -NoProfile -File {项目根}/.codebuddy/scripts/analyze-roster.ps1 -Chapter N
+pwsh -NoProfile -File .dsh/scripts/analyze-roster.ps1 -Chapter N
+# 如脚本所在 .dsh 与当前 novel/ 不在同一目录，改用绝对路径：
+# pwsh -NoProfile -File {项目根}/.dsh/scripts/analyze-roster.ps1 -Chapter N
 ```
 
 - 脚本输出 JSON 字段：`activeNamedTotal`（近10章活跃角色总量）/ `sceneOverload`（单场>5场景）/ `newCharsThisChapter`（本章新角色）/ `staleCores`（核心配角放长假）/ `roster`（各角色出场统计）
@@ -233,7 +233,7 @@ pwsh -NoProfile -File .codebuddy/scripts/analyze-roster.ps1 -Chapter N
 9. **文风 / 节奏风险 + AI味检测**（`chapter` / `chapter-full` 仅作 WARNING 输出）
    - 仅在证据明确时提示：连续大段纯对话无动作承接、连续场景推进过平、章末钩子偏弱、关键信息埋没在冗余描写中
    - **AI味检测**：清单体（连续多句同构短句/一句一行）、机械连接词（首先/其次/仿佛/综上所述）、整章无内心流、通篇"了/的/然后"高频词、所有动机都被直白解释（无留白）→ 均标记 WARNING，附位置
-   - 🔴 **主动参考 humanizer-zh 技能**：执行本项前读取 `.codebuddy/skills/Humanizer-zh/SKILL.md`（如文件不存在则跳过），将其 24 种 AI 写作痕迹 / 快速检查清单并入本项判定依据，技能未覆盖处按本项目规则执行
+   - 🔴 **主动参考 humanizer-zh 技能**：执行本项前读取 `.dsh/skills/Humanizer-zh/SKILL.md`（如文件不存在则跳过），将其 24 种 AI 写作痕迹 / 快速检查清单并入本项判定依据，技能未覆盖处按本项目规则执行
    - 🔴 这类问题默认**不单独拆新 Agent**，由主会话在回修时顺手做最小优化
    - 若文风/节奏问题已经导致 design / outline 的关键承诺未兑现，则按兑现失败直接升级到对应的 `CRITICAL`
 
@@ -344,7 +344,7 @@ pwsh -NoProfile -File .codebuddy/scripts/analyze-roster.ps1 -Chapter N
 </constraints>
 
 <inline_execution>
-本段只在 `.codebuddy/config.yaml` 的 `review.*` 为 `inline`（或 subagent 不可用而降级）时使用：**主会话不启动 SubAgent，自己执行本文件定义的同一套审计**。作为 SubAgent 运行时忽略本段。
+本段只在 `.dsh/config.yaml` 的 `review.*` 为 `inline`（或 subagent 不可用而降级）时使用：**主会话不启动 SubAgent，自己执行本文件定义的同一套审计**。作为 SubAgent 运行时忽略本段。
 
 适用审查点与 stage 对应：
 - `review.design` → `stage=design`（/novel-design N 步骤 4.5）
