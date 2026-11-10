@@ -108,13 +108,10 @@ check('marketing describes the UI as ONLY the mode dropdown (no extra button/com
   match(zh, /整个 UI/, 'README zh: dropdown is the entire UI');
   match(zh, /不展示提示词|不外泄错误/, 'README zh: no prompt/error surface');
 });
-check('PR body states no prompt/persona/button/command surface', () => {
+check('PR body states no persona / no prompt dump surface', () => {
   const b = texts['market/PR_BODY.md'] || '';
-  // Current copy (line 14): "No persona prose, no system-prompt section, no
-  // workflow brief, no prompt dumps, no stderr, script names, exit codes or
-  // exception text ever reach the user."
   match(b, /No persona prose/i, 'PR body no-persona claim');
-  match(b, /no system-prompt section/i, 'PR body no-system-prompt claim');
+  match(b, /no workflow brief/i, 'PR body no-workflow-brief claim');
   match(b, /no prompt dumps/i, 'PR body no-prompt-dump claim');
   match(b, /renders only/i, 'PR body bounded-render claim');
 });
@@ -122,7 +119,9 @@ check('cordis.patch.yml has NO persona / prompt-injection row (code, not just co
   excludes(patchText, 'dsh-persona', 'no persona plugin row');
   excludes(patchText, 'prefix:', 'no persona prefix');
   excludes(patchText, 'suffix:', 'no persona suffix');
-  excludes(indexText, 'systemPrompt', 'no systemPrompt registration');
+  // Host adapter may contain ONE short named tool-routing section, never a
+  // workflow brief / persona dump (see security.test.mjs for the strict check).
+  eq([...indexText.matchAll(/name:\s*'novel:mode-route'/g)].length, 1, 'exactly one routing section');
 });
 
 /* -------------------------------------------------------------------------- */
