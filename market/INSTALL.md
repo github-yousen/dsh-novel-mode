@@ -1,7 +1,7 @@
 # 安装「小说模式」(Novel Mode)
 
 > 独立仓库：https://github.com/github-yousen/dsh-novel-mode （Public，默认分支 **`main`**，MIT）。
-> 包根目录就是插件本体（`package.json` / `cordis.patch.yml` / `index.js` / `client.js` / `assets/` 都在仓库根）。
+> 包根目录就是插件本体（`package.json` / `cordis.patch.yml` / `index.js` / `lib/` / `assets/` 都在仓库根；**纯 Host 插件，无 `client.js`**）。
 
 ---
 
@@ -9,7 +9,8 @@
 
 - **PowerShell 7（`pwsh`）**：打包的工作流脚本是 `.ps1`，统一以 `pwsh -NoProfile -File .dsh/scripts/<name>.ps1 -Chapter N` 执行（禁止 `-Command`）。
 - **Python 3**：`fanqie-rank.py` / `fanqie-download.py` 两个脚本。它们**纯标准库**（`requirements.txt`：Python ≥3.7，无需 `pip install`）。
-- 一个**可写的小说项目目录**：进入模式时插件会把随包的 `.dsh/` 工作副本物化到当前项目根目录（已存在的文件不会被覆盖）。
+- 一个**可写的小说项目目录**：进入模式时插件会把随包的 `.dsh/` 工作副本物化到当前项目根目录（已存在的文件不会被覆盖）。**请先打开（或新建）一个空目录作为小说项目工作区**，再在该目录的会话里选「小说模式」——工作目录就是小说项目，请勿在无关目录中选该模式。
+- 若缺少 `pwsh`，引擎会记录 `DEGRADED` 门禁并暂停，状态显示「**需要准备运行环境，请查看安装说明**」——它不会静默放行也不会崩溃。确认 `pwsh --version` 与 `python --version` 后重启 dsh，再用 `resume` 继续。
 - 插件本体**是纯 JavaScript、无构建脚本、无 npm 依赖**（只用 `ctx` / `inject` 取宿主服务），所以从 git 安装**不需要** `prepare` 脚本，也**不需要** pnpm `allowBuilds` / `approvedBuilds` 构建授权。
 
 `engines.dsh`：`>=0.2.0-rc.1 <0.2.0 || >=0.2.1-rc.1 <0.3.0-0`（安装时宿主会复核）。
