@@ -340,7 +340,7 @@ pwsh -NoProfile -File .dsh/scripts/analyze-roster.ps1 -Chapter N
 </constraints>
 
 <inline_execution>
-本段只在 `.codebuddy/config.yaml` 的 `review.*` 为 `inline`（或 subagent 不可用而降级）时使用：**主会话不启动 SubAgent，自己执行本文件定义的同一套审计**。作为 SubAgent 运行时忽略本段。
+本段只在 `.dsh/config.yaml` 的 `review.*` 为 `inline`（或 subagent 不可用而降级）时使用：**主会话不启动 SubAgent，自己执行本文件定义的同一套审计**。作为 SubAgent 运行时忽略本段。
 
 适用审查点与 stage 对应：
 - `review.design` → `stage=design`（/novel-design N 步骤 4.5）
