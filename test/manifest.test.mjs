@@ -174,6 +174,25 @@ check('every patch row has id + name; no duplicate ids', () => {
     ok(typeof r.name === 'string' && r.name.length > 0, 'row name');
   }
 });
+check('preset rows use resolvable package names (no unresolvable subpath exports)', () => {
+  // R7 regression: '@deepseek-ai/dsh-tool-subagent-control/list-agents' made the
+  // whole preset `broken` ("never started"), so the mode was filtered OUT of the
+  // dropdown by presetOptions(). The control-plane rows are not needed by the
+  // novel workflow — only the subagent dispatch tool is.
+  const collect = (rows) => rows.flatMap((r) => {
+    const nested = Array.isArray(r.config) ? collect(r.config) : [];
+    return [r.name, ...nested];
+  });
+  const names = collect(patch[0].insert[1].config.plugins).filter(Boolean);
+  for (const bad of ['@deepseek-ai/dsh-tool-subagent-control', '@deepseek-ai/dsh-tool-subagent-control/list-agents', '@deepseek-ai/dsh-tool-subagent-control/']) {
+    excludes(names.join('\n'), bad, `preset must not reference unresolvable ${bad}`);
+  }
+  // Every referenced package must be a plain @deepseek-ai/dsh-* name (single
+  // package), not a deep subpath that may not have an export in every build.
+  for (const n of names) {
+    ok(!/^@deepseek-ai\/dsh-[^/]+\/.+/.test(n), `no deep subpath package: ${n}`);
+  }
+});
 
 /* -------------------------------------------------------------------------- */
 /* 3. locale JSON validity + required fields                                  */
