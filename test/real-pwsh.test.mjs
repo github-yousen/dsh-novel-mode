@@ -83,6 +83,24 @@ try {
   const bad = spawnSync('pwsh', ['-NoProfile', '-File', join(project, '.dsh', 'scripts', 'validate-outline.ps1'), '-Chapter', '1'], { encoding: 'utf8', windowsHide: true, cwd: project });
   check('real pwsh: the OLD blanket -Chapter is REJECTED (proves the bug was real)', bad.status !== 0 && /parameter.*Chapter|cannot be found/i.test(String(bad.stderr) + String(bad.stdout)), `exit=${bad.status}`);
 
+  // PM-B1 (the one blocker): the `import` bootstrap branch gate is
+  // validate-chapter.ps1, whose -Chapter is Mandatory. A bare invocation HANGS
+  // for the full 120s spawnSync timeout waiting for interactive input. The fix
+  // sends `-Chapter All`; this test runs REAL pwsh with a short timeout.
+  const importArgs = ['-NoProfile', '-File', join(project, '.dsh', 'scripts', 'validate-chapter.ps1'), ...e.gateArgsFor('.dsh/scripts/validate-chapter.ps1', { chapter: 'All' })];
+  // Also assert the ENGINE (gate()) builds that argv for the import stage,
+  // not just the helper — this is the exact path the Host calls.
+  const argvSeen = [];
+  const importIo = { exists: () => true, spawnSync: (c, a) => { argvSeen.push(a); return { status: 0 }; }, now: () => 1 };
+  const importState = e.createState({ project }); importState.stage = 'import'; importState.status = 'running'; importState.chapter = null;
+  e.gate('import', importIo, project, importState);
+  check('engine gate(import) builds -Chapter All argv', argvSeen[0] && argvSeen[0].includes('-Chapter') && argvSeen[0].includes('All'), JSON.stringify(argvSeen[0]));
+  const t0 = Date.now();
+  const imp = spawnSync('pwsh', importArgs, { encoding: 'utf8', windowsHide: true, cwd: project, timeout: 15000 });
+  const elapsed = Date.now() - t0;
+  check('import branch uses -Chapter All (not a bare unbindable -Chapter)', importArgs.includes('All') && importArgs.includes('-Chapter'), importArgs.slice(-2).join(' '));
+  check('real pwsh: import gate with -Chapter All returns in seconds, NEVER hangs', !imp.error && elapsed < 12000 && imp.status !== null, `elapsed=${elapsed}ms status=${imp.status} err=${imp.error?.code ?? 'none'}`);
+
   // Linear-stage gates with a caller-supplied chapter (F2): engine.gate must
   // pass -Chapter N through so the script binds (even if it then fails on
   // missing artifacts — binding failure is what we must rule out).
