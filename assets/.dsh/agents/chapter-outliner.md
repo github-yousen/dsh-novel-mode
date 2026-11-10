@@ -61,7 +61,7 @@ SubAgent 启动后，按以下顺序加载：
    - `novel/state/memory-digest.md`（由 `build-memory-digest.ps1` 自动维护）
    - 三节内容：① 全书逐章一句话剧情索引 ② 专名/细节词表（标注首次出现章）③ 伏笔台账（埋设@X → 回收@Y / 未回收）
    - 🔴 **这是近 10 章摘要之外的唯一长期记忆**，扩纲时必须据此自查：桥段是否与早期章节重复、埋设已久的"未回收"伏笔是否该回收、早期专名是否被改写
-   - 文件不存在（旧项目未生成）→ 执行 `pwsh -NoProfile -File .codebuddy/scripts/build-memory-digest.ps1 -Rebuild` 生成后再加载；仍失败则在返回摘要中标注"长期记忆未覆盖"
+   - 文件不存在（旧项目未生成）→ 执行 `pwsh -NoProfile -File .dsh/scripts/build-memory-digest.ps1 -Rebuild` 生成后再加载；仍失败则在返回摘要中标注"长期记忆未覆盖"
 </context_loading>
 
 <outline_generation_rules>
