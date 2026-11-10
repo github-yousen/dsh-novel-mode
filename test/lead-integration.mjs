@@ -34,6 +34,7 @@ let preset = 'novel';
 const ctx = {
   skills: { register: (d) => { skills.push(d); return () => {}; } },
   tools: { register: (d) => { tools.push(d); return () => {}; } },
+  systemPrompt: { section: () => () => {} },
   on: (name, fn) => { (listeners[name] ||= []).push(fn); },
   get: (k) => k === 'workingDirectory' ? { get: () => project }
     : k === 'agentPresets' ? { presetForSession: () => preset }
