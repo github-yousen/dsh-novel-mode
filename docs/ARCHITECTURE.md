@@ -1,7 +1,7 @@
 # 小说模式 — Architecture
 
 > Companion to [PM-PRD.md](PM-PRD.md). Describes the implemented engine, not a
-> proposal. Status: implemented in `lib/orchestrator.js` + `index.js` (v2.0.1).
+> proposal. Status: implemented in `lib/orchestrator.js` + `index.js` (v2.1.0).
 
 ## 1. Layer split
 
