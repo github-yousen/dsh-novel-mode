@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.1 — mode dropdown visibility fix (2026-11-10)
+
+- **Real defect found from a user screenshot**: the `小说模式` entry was
+  registered in the agent-preset roster but **filtered out of the mode dropdown**
+  because its declaration included `@deepseek-ai/dsh-tool-subagent-control/list-agents`
+  — a subpath export that is not resolvable in every DSH build. The preset was
+  marked `broken` ("never started"), and `presetOptions()` hides broken presets.
+  Verified against the live Host roster with a temporary diagnostic plugin
+  before and after the fix.
+- Removed the two `dsh-tool-subagent-control` rows from the preset; the novel
+  workflow only needs `dsh-tool-subagent` (dispatch), which stays.
+- Added a `manifest.test.mjs` regression that rejects unresolvable deep-subpath
+  package names in the preset, so this cannot silently recur.
+- Verified after a Host restart: roster has 5 healthy presets, `novel` has
+  `name: 小说模式` and no `broken` → visible in the dropdown.
+
 ## 2.0.0 — deterministic orchestration engine (enterprise/production)
 
 The product was rebuilt from a "preset + persona prompt group" into a **quiet
