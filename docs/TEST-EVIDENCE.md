@@ -6,7 +6,7 @@ Generated from `node test/run-all.mjs`, 2026-11-10 02:50 +08. Reproduce with:
 cd novel-mode-plugin && node test/run-all.mjs
 ```
 
-**Result: 9/9 suites PASS, 275/275 assertions, exit 0.** Each suite runs in its
+**Result: 10/10 suites PASS, 292/292 assertions, exit 0.** Each suite runs in its
 own `node` process with mocked `io`/`ctx` — no DSH host, no LLM, no network, no
 credentials needed.
 
