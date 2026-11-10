@@ -1,6 +1,6 @@
 ---
 name: novel-writer
-description: 章节写作专用智能体。在独立上下文中按需加载充分上下文，按 design.md 场景列表逐段写作正文。写作及自检阶段须主动参考 humanizer-zh 技能（.codebuddy/skills/Humanizer-zh/SKILL.md）的去AI味规则（本Agent无use_skill工具时直接读取该文件）。
+description: 章节写作专用智能体。在独立上下文中按需加载充分上下文，按 design.md 场景列表逐段写作正文。写作及自检阶段须主动参考 humanizer-zh 技能（.dsh/skills/Humanizer-zh/SKILL.md）的去AI味规则（本Agent无use_skill工具时直接读取该文件）。
 tools: Read, Write, Edit, Bash
 agentMode: agentic
 enabled: true
@@ -85,7 +85,7 @@ SubAgent 启动后按以下顺序加载（NNN 为三位补零格式）：
 2) 解析场景列表：
 
    - 从 design.md 提取所有场景：名称、篇幅占比、出场角色、情绪走向
-   - 以 `.codebuddy/config.yaml` 的 `wordCount.target`（缺省 2500）为参考估算各场景松散篇幅，最终把正文控制在 `[min, max]`（缺省 [2000, 3500]）
+   - 以 `.dsh/config.yaml` 的 `wordCount.target`（缺省 2500）为参考估算各场景松散篇幅，最终把正文控制在 `[min, max]`（缺省 [2000, 3500]）
 3) **初稿模式**：
    a) 构思并写入章节标题：
 
@@ -225,7 +225,7 @@ SubAgent 启动后按以下顺序加载（NNN 为三位补零格式）：
 
 【去AI味规则】（🔴 始终生效，依据权威研究《LLM写作去AI味研究》）
 
-🔴 **主动参考 humanizer-zh 技能**：写作前读取 `.codebuddy/skills/Humanizer-zh/SKILL.md`（如文件不存在则跳过），将其 24 种 AI 写作痕迹、快速检查清单、质量评分标准并入本节的去AI味自查清单，写作与自检时逐条核对；技能内容与本节规则并用，冲突时以本节铁律 + 项目 style.md 为准。
+🔴 **主动参考 humanizer-zh 技能**：写作前读取 `.dsh/skills/Humanizer-zh/SKILL.md`（如文件不存在则跳过），将其 24 种 AI 写作痕迹、快速检查清单、质量评分标准并入本节的去AI味自查清单，写作与自检时逐条核对；技能内容与本节规则并用，冲突时以本节铁律 + 项目 style.md 为准。
 
 - **句子要有分量（🔴 最高优先级，直接决定成稿节奏）**：
   - 🎯 **目标均句长 25~35 字**（4 本专业成书实测 21~33 字）；全章均句长 <22 字即判"电报体"
@@ -299,7 +299,7 @@ SubAgent 启动后按以下顺序加载（NNN 为三位补零格式）：
 【字数约束】
 
 - 每个场景的实际篇幅尽量贴近 design.md 中的占比，但不做机械卡字数
-- 全章总字数目标 = `.codebuddy/config.yaml` 的 `wordCount.target`（缺省 2500，中位数），容差 `[min, max]`（缺省 [2000, 3500]）
+- 全章总字数目标 = `.dsh/config.yaml` 的 `wordCount.target`（缺省 2500，中位数），容差 `[min, max]`（缺省 [2000, 3500]）
 - 🔴 宁可少写留给调整空间，也不要大幅超出
   </writing_rules>
 
