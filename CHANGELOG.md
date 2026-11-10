@@ -40,10 +40,13 @@ directly. Details: `docs/REVIEW-*.md`.
   (clean-profile installs work); `AGENTS.md` rewritten path-neutral. Regression
   test asserts no `.codebuddy` reference remains.
 
-**Docs / market:** PR_STATE rewritten with v2.0.1 + `Submission gate` SUCCESS and
+**Docs / market:** PR_STATE rewritten with v2.1.0 + `Submission gate` SUCCESS and
 dated evidence; PR_BODY honest about the single routing section; token-storage
-disclosure removed; stale test counts corrected. Self-hosted index and Release
-remain at v2.0.1. Test suite: **10/10 suites, 292/292 assertions, exit 0**.
+disclosure removed; version-drift guard added; stale test counts corrected.
+Self-hosted index and Release are at v2.1.0.
+Post-review fixes: `import` gate uses `-Chapter All` (no 120s hang, PM-B1),
+`start` from paused preserves progress (F6), real-`pwsh` regression tests.
+Test suite: **10/10 suites, 297/297 assertions, exit 0**.
 
 ## 2.0.1 — mode dropdown visibility fix (2026-11-10)
 
