@@ -56,7 +56,7 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 # plugin_manager install_bundle with target = absolute path to this directory
 ```
 
-Then **refresh the page**, open the mode dropdown, pick **小说模式**, and describe
+Then **restart DeepSeek Harness** (a mere page refresh does not reload the new `cordis.patch.yml` preset row), open the mode dropdown, pick **小说模式**, and describe
 what you want to write. The engine takes it from there.
 
 ### 30-second try it
