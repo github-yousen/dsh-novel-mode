@@ -1,5 +1,5 @@
-# 工作流全局配置（母本 .codebuddy/config.yaml）
-# 随 .codebuddy 同步到所有小说项目子目录，各项目统一生效
+# 工作流全局配置（母本 .dsh/config.yaml）
+# 随 .dsh 同步到所有小说项目子目录，各项目统一生效
 # 修改本文件后，各项目脚本立即读取，无需改动命令/脚本/模板
 # 🔴 若某字段缺省，脚本与命令回退到内置默认值（min=2000 / target=2500 / max=3500）
 
@@ -18,7 +18,7 @@ memory:
 
 # 深度语义审查（continuity-validator 那套审计）的执行方式 —— 由本段决定，不再靠命令参数区分
 #   subagent : 启动 SubAgent continuity-validator，在独立上下文审计（与写作隔离，不受"自己审自己"影响；更慢、更费 token）
-#   inline   : 主会话自己执行同一套审计——以 .codebuddy/agents/continuity-validator.md 的
+#   inline   : 主会话自己执行同一套审计——以 .dsh/agents/continuity-validator.md 的
 #              <context_loading>/<checks>/<severity>/<output_format> 为唯一清单（快、省；但与写作同一上下文）
 # 🔴 缺省或值非法 → 按 subagent 执行（兼容旧行为）
 # 🔴 subagent 模式下 SubAgent 不可用（未注册 / 调用报错 / 无返回）→ 自动降级为 inline，并在报告中注明降级原因
