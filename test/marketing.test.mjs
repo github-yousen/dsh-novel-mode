@@ -295,6 +295,13 @@ check('PM-M1: no version-bearing surface still advertises an OLD current version
   // The catalog tarball must point at the CURRENT version.
   const yml = texts['market/data/plugins/github-yousen__dsh-novel-mode.yml'] ?? '';
   includes(yml, `releases/download/v${pkg.version}/dsh-novel-mode.tgz`, 'catalog tarball pinned to current version');
+  // PM-R3 nits: no stale bootstrap "就绪" example, no "no system-prompt
+  // section" claim (one routing section exists), no stale suite count.
+  for (const rel of ['README.md', 'README.zh.md']) {
+    noMatch(texts[rel] ?? '', /阶段：constitution · 就绪|阶段：write · 第 1 章 · 就绪/, `${rel} must use current status tokens`);
+  }
+  noMatch(texts['index.js'] ?? '', /no system-prompt section/i, 'header must not deny the routing section');
+  noMatch(texts['CHANGELOG.md'] ?? '', /292\/292|remain at v2\.0\.1/i, 'CHANGELOG current entry must not be stale');
 });
 check('engines.dsh in catalog/index matches package.json', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
