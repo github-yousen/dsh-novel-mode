@@ -54,13 +54,25 @@ check('directory names map to skill names (Humanizer-zh special case)', () => {
 check('every registration has source === runtime', () => {
   for (const r of regs) eq(r.source, 'runtime', `source for ${r.name}`);
 });
-check('invocation: modelInvocable always true; engine-controlled skills NOT user-invocable (B4)', () => {
-  const ENGINE_CONTROLLED = new Set(['novel-batch', 'novel-write']);
+check('invocation: modelInvocable always true; engine-controlled/worker/optional skills NOT user-invocable (B4, F-2)', () => {
+  // Only the 9 user-facing novel-* workflow skills (minus the 2 engine-only
+  // stages) plus humanizer-zh stay in the / menu. Worker roles and the two
+  // external-site integrations are engine/opt-in only.
+  const ENGINE_CONTROLLED = new Set([
+    'novel-batch', 'novel-write',
+    'agent-novel-writer', 'agent-continuity-validator', 'agent-book-analyzer',
+    'agent-chapter-outliner', 'agent-batch-outliner', 'agent-batch-designer',
+    'agent-chapter-summarizer', 'agent-constitution-extractor', 'agent-skeleton-rebuilder',
+    'site-fanqie', 'novel-downloader',
+  ]);
   for (const r of regs) {
     eq(r.invocation?.modelInvocable, true, `modelInvocable for ${r.name}`);
-    // Engine-controlled stages must not be reachable from the / menu, or the
-    // user could bypass the deterministic gates (PM-REVIEW-R1 B4 / AC-9/11).
     eq(r.invocation?.userInvocable, !ENGINE_CONTROLLED.has(r.name), `userInvocable for ${r.name}`);
+  }
+  // G10: block-scalar frontmatter must NOT become a 1-character description.
+  for (const r of regs) {
+    ok(r.description.length > 2, `description not a block-scalar indicator for ${r.name}`);
+    ok(!/^[|>]$/.test(r.description), `description is real text for ${r.name}`);
   }
 });
 check('every registration has non-empty string content === trimmed SKILL.md body', () => {
@@ -157,9 +169,12 @@ check('apply registers exactly one tool (novel_orchestrate)', () => {
   eq(ctx._tools.length, 1, 'tool count');
   eq(ctx._tools[0].name, 'novel_orchestrate');
 });
-check('apply registers no systemPrompt section / no command / no client half', () => {
+check('apply registers listeners + exactly ONE short tool-routing section', () => {
   ok(ctx._events['agent/created'] && ctx._events['agent/created'].length >= 1, 'agent/created listener expected');
   ok(ctx._events['agent-preset/selected'] && ctx._events['agent-preset/selected'].length >= 1, 'preset/selected listener expected');
+  eq(ctx._sections.length, 1, 'exactly one routing section');
+  eq(ctx._sections[0].name, 'novel:mode-route');
+  ok(ctx._sections[0].text.length < 900, 'routing section is short, not a workflow prompt group');
 });
 check('tool parameters is an object-rooted JSON Schema with additionalProperties:false', () => {
   const p = ctx._tools[0].parameters;
