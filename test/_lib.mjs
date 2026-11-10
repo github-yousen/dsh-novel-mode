@@ -181,10 +181,12 @@ export function mockCtx(overrides = {}) {
   const skills = [];
   const tools = [];
   const events = {};
+  const sections = [];
   const o = overrides;
   return {
     skills: { register(d) { skills.push(d); return () => {}; } },
     tools: { register(d) { tools.push(d); return () => {}; } },
+    systemPrompt: { section(s) { sections.push(s); return () => {}; } },
     on(name, fn) { (events[name] ||= []).push(fn); },
     get(name) {
       if (o.get) { const r = o.get(name); if (r !== undefined) return r; }
@@ -193,7 +195,7 @@ export function mockCtx(overrides = {}) {
       if (name === 'agents') return { get: () => o.agentGet ? o.agentGet() : undefined };
       return undefined;
     },
-    _skills: skills, _tools: tools, _events: events,
+    _skills: skills, _tools: tools, _events: events, _sections: sections,
   };
 }
 
