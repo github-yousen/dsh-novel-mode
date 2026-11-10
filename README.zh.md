@@ -57,7 +57,7 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 ```text
 你：帮我从零搭一个都市悬疑的世界观，再写第 1 章
 模型 → novel_orchestrate(start → select-branch constitution → …)
-你只会看到：阶段：constitution · 就绪   →   阶段：write · 第 1 章 · 就绪
+你只会看到：阶段：准备开始 · 请选择开始方式   →   阶段：撰写正文 · 第 1 章 · 进行中
 ```
 
 这一行状态背后，引擎已经选好分支、检查入口产物、跑过设计稿/正文校验脚本、
