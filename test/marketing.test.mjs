@@ -274,6 +274,28 @@ check('version in index-snippet / CHANGELOG / package.json is consistent (no sta
   eq(idx.plugins[0].versions[0].version, pkg.version, 'index-snippet version matches package.json');
   noMatch(texts['CHANGELOG.md'], /v?1\.1\.0\s*(?:is|as)?\s*(?:the )?current/i, 'no stale current-version claim');
 });
+check('PM-M1: no version-bearing surface still advertises an OLD current version', () => {
+  // A 5-angle review + PM R2 found PR_STATE / ARCHITECTURE / SUBMISSION_STEPS
+  // drifting to older versions. Guard the current version across all surfaces.
+  const old = ['2.0.0', '2.0.1'];
+  const surfaces = {
+    'market/PR_STATE.md': (t) => t,
+    'docs/ARCHITECTURE.md': (t) => t.split('\n').slice(0, 8).join('\n'),
+    'market/SUBMISSION_STEPS.md': (t) => t,
+    'README.md': (t) => t,
+    'README.zh.md': (t) => t,
+  };
+  for (const [rel, pick] of Object.entries(surfaces)) {
+    const t = pick(texts[rel] ?? '');
+    // Historical mentions are fine; only a "current version: vX" style claim or
+    // a tarball pinned to an old tag is a real drift.
+    noMatch(t, /releases\/download\/v2\.0\.[01]\//, `${rel} must not pin an old tarball`);
+    noMatch(t, /\*\*v2\.0\.[01]\s*—/, `${rel} must not label v2.0.x as the current product`);
+  }
+  // The catalog tarball must point at the CURRENT version.
+  const yml = texts['market/data/plugins/github-yousen__dsh-novel-mode.yml'] ?? '';
+  includes(yml, `releases/download/v${pkg.version}/dsh-novel-mode.tgz`, 'catalog tarball pinned to current version');
+});
 check('engines.dsh in catalog/index matches package.json', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
   eq(idx.plugins[0].versions[0].engines.dsh, pkg.engines.dsh);
