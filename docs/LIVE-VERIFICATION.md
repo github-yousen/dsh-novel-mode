@@ -49,8 +49,8 @@ The live checkpoint's structured log contained a `.dsh/scripts/validate-chapter.
 defense-in-depth, `lib/orchestrator.js::advance()` now stores a classified gate
 CODE (`stage` or `batch:<step>`) instead of any script path (NG-3). A new
 `security.test.mjs` regression asserts `serializeState()` contains neither
-`.ps1` nor raw stderr. Full suite after the fix: **9/9 suites, 278/278
-assertions, exit 0**.
+`.ps1` nor raw stderr. Full suite after the fix: **10/10 suites, 292/292
+assertions, exit 0** (count updated after the multi-angle review round).
 
 ## Updated external-gate status
 
