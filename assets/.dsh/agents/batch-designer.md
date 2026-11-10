@@ -92,7 +92,7 @@ SubAgent 启动后，**首先检查** `novel/chapters/[NNN]/context-bundle.md` �
    - 🔴 全量加载——设计阶段需要完整理解所有角色的性格/关系/演化，才能合理安排出场和互动
 
 9. **设计稿模板**（必加载）
-   - `.codebuddy/templates/chapter-design.md`
+   - `.dsh/templates/chapter-design.md`
 
 10. **全书长期记忆摘录**（🔴 `N > 21` 时必加载，替代"读不完的早期章节"）
     - `novel/state/memory-digest.md`（由 `build-memory-digest.ps1` 自动维护）
@@ -123,7 +123,7 @@ SubAgent 启动后，**首先检查** `novel/chapters/[NNN]/context-bundle.md` �
    - 🔴 围绕"搭戏→唱戏→高潮→结尾"弧线展开，根据剧情灵活组合（不必固定四段式）
    - 每场景明确：切入方式、目的、障碍、结果、反应节拍
    - 使用**篇幅占比**而非具体字数，场景表格合计建议为 100%
-   - 正文最终硬约束为 `.codebuddy/config.yaml` 的 `wordCount` 段（缺省 2000-3500 字），设计稿只负责节奏分配
+   - 正文最终硬约束为 `.dsh/config.yaml` 的 `wordCount` 段（缺省 2000-3500 字），设计稿只负责节奏分配
    - 生成场景表格（含反应节拍列）+ 场景详细规划
    - 🔴 **出场角色分类标记**：场景表格"出场角色"列中，角色分两类处理：
      - **命名角色**（有名有姓、在剧情中有实质作用的角色）→ 直接写名字，不加标记。如果 `novel/constitution/characters/` 下已有该角色的 `.md` 设定文件则直接引用；如果是**新角色**（首次出场、大纲/剧情需要、有对话或关键行动），则在设计稿中直接使用其名字，后续由主流程在校验 ERROR 时创建设定文件
@@ -151,7 +151,7 @@ SubAgent 启动后，**首先检查** `novel/chapters/[NNN]/context-bundle.md` �
 
 3) 写入 `novel/chapters/[NNN]/design.md`
    - 🔴 **若 design.md 已由 `create-design-template.ps1` 生成为骨架模板**（文件内含"由 create-design-template.ps1 从 state.yaml 自动预填"提示行）→ **在骨架上填充**：保留段落结构 / 场景表格列 / "伏笔操作"独立行格式不变，只替换 `[占位]` 与示例文字，补充场景详细规划等剧情内容；**禁止重排段落、改表格列、改伏笔操作格式**
-   - 🔴 若 design.md 不存在或非骨架 → 按 `.codebuddy/templates/chapter-design.md` 模板格式从零生成
+   - 🔴 若 design.md 不存在或非骨架 → 按 `.dsh/templates/chapter-design.md` 模板格式从零生成
    - 🔴 章节目录使用三位数补零格式
    - 🔴 写作执行信息字段必须具体可执行，禁止写“按设定来”“见上文”等空话
 
@@ -193,7 +193,7 @@ SubAgent 启动后，**首先检查** `novel/chapters/[NNN]/context-bundle.md` �
 - 唱戏场景：建议 20%-35%/段
 - 高潮场景：建议 25%-40%
 - 结尾场景：建议 10%-20%
-- 🔴 以上为节奏建议，不做机械卡字数；正文硬约束仍以 `.codebuddy/config.yaml` 的 `wordCount` 段（缺省 2000-3500 字）为准
+- 🔴 以上为节奏建议，不做机械卡字数；正文硬约束仍以 `.dsh/config.yaml` 的 `wordCount` 段（缺省 2000-3500 字）为准
 
 【衔接约束】
 - 🔴 本章开头必须自然衔接上一章结尾
