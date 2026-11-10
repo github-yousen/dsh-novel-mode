@@ -6,11 +6,11 @@
 
 ---
 
-## 已自动完成的部分（2026-11-09 建仓，2026-11-10 v2.0.0 重建同步）
+## 已自动完成的部分（2026-11-09 建仓，2026-11-10 v2.1.0 重建同步）
 
 以下发布步骤**已通过 GitHub API 自动完成**（使用了用户授权的凭据，未在此记录凭据位置或取值），无需用户手动操作：
 
-1. **创建并推送开源仓库**：`https://github.com/github-yousen/dsh-novel-mode`（Public、`main`、MIT）。根 `package.json` 声明 `dsh.bundle`，旁边有 `cordis.patch.yml`；不含任何凭据。v2.0.0 为确定性编排引擎重建版（具体 commit SHA 见仓库 `main` 分支，不写死旧 SHA）。
+1. **创建并推送开源仓库**：`https://github.com/github-yousen/dsh-novel-mode`（Public、`main`、MIT）。根 `package.json` 声明 `dsh.bundle`，旁边有 `cordis.patch.yml`；不含任何凭据。v2.1.0 为确定性编排引擎重建版（具体 commit SHA 见仓库 `main` 分支，不写死旧 SHA）。
 2. **添加 topic**：`dsh-plugin`（另有 `deepseek-harness`、`novel`、`workflow`、`writing`、`chinese-fiction`）。
 3. **产出目录条目**：[`data/plugins/github-yousen__dsh-novel-mode.yml`](data/plugins/github-yousen__dsh-novel-mode.yml)——一个 YAML 文件，`url`/`name`/文件名三者一致，`category: workflow`，`description.en` 必填且已引号化，描述与代码相符、无夸大；`icon:` 指向仓库内真实的 GitHub 托管 raster PNG。
 4. **fork 上游并开 PR**：见下方「自动投稿结果」记录的 PR 链接。产品重建后，fork 分支的 YAML 与 PR 正文均已同步更新。
