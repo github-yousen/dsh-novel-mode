@@ -64,7 +64,7 @@ what you want to write. The engine takes it from there.
 ```text
 You: 帮我从零搭一个都市悬疑的世界观，再写第 1 章
 Model → novel_orchestrate(start → select-branch constitution → …)
-You see: 阶段：constitution · 就绪   →   阶段：write · 第 1 章 · 就绪
+You see: 阶段：准备开始 · 请选择开始方式   →   阶段：撰写正文 · 第 1 章 · 进行中
 ```
 
 Behind that one-line status the engine has already picked the branch, checked
