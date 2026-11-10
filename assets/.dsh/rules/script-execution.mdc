@@ -13,8 +13,8 @@ enabled: true
 **必须使用 `pwsh -NoProfile -File` 执行，禁止 `-Command`。**
 
 ```
-✅ pwsh -NoProfile -File .codebuddy/scripts/xxx.ps1 -参数名 参数值
-❌ pwsh -NoProfile -Command "& .codebuddy/scripts/xxx.ps1 ..."
+✅ pwsh -NoProfile -File .dsh/scripts/xxx.ps1 -参数名 参数值
+❌ pwsh -NoProfile -Command "& .dsh/scripts/xxx.ps1 ..."
 ❌ pwsh -Command "..."
 ❌ pwsh -c "..."
 ```
@@ -26,8 +26,8 @@ enabled: true
 所有脚本的 `Mandatory` 参数**必须在命令行显式传入**，否则 PowerShell 会进入交互式等待输入，导致执行挂起/超时。
 
 ```
-✅ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
-❌ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1
+✅ pwsh -NoProfile -File .dsh/scripts/build-context-bundle.ps1 -Chapter 19
+❌ pwsh -NoProfile -File .dsh/scripts/build-context-bundle.ps1
    → 缺少 -Chapter，脚本会挂起等待用户手动输入
 ```
 
@@ -49,7 +49,7 @@ enabled: true
 | `build-memory-digest.ps1` | （无） | `-UpTo N`, `-Rebuild`, `-ProjectRoot "项目根"` | 直接执行（增量维护 `novel/state/memory-digest.md`：全书逐章一句话剧情 + 专名词表 + 伏笔台账）。⚠️ 常态由 `sync-state.ps1` / `build-context-bundle.ps1` 自动调用，**无需手动跑**；仅在导入旧书、摘要批量补齐后需 `-Rebuild` |
 | `split-chapters.ps1` | `-OutputDir "路径"` | `-InputFile`/`-InputDir`（二选一）, `-Encoding` | `-InputFile "稿件.txt" -OutputDir "novel/chapters"` |
 | `validate-outline.ps1` | `-StartChapter N -EndChapter M` 或 `-All` | | `-StartChapter 41 -EndChapter 60` 或 `-All`（仅做 outline 存在性/非空轻量检查，不再校验逐章模板） |
-| `check-ai-flavor.ps1` | `-Chapter N` 或 `-All` | `-ProjectRoot "项目根目录"`（共享 `.codebuddy` 多项目场景必须传） | `-Chapter 15` 或 `-All`（AI味机械检测：清单体/八股词/高频词；ERROR→必修）。⚠️ 根目录 `.codebuddy` 被多个项目共享时（如 `d:\temp\novel` 下有 `new/`、`1999/`），必须 `-ProjectRoot` 指定目标项目，否则兄弟目录搜索可能命中错误项目 |
+| `check-ai-flavor.ps1` | `-Chapter N` 或 `-All` | `-ProjectRoot "项目根目录"`（共享 `.dsh` 多项目场景必须传） | `-Chapter 15` 或 `-All`（AI味机械检测：清单体/八股词/高频词；ERROR→必修）。⚠️ 根目录 `.dsh` 被多个项目共享时（如 `d:\temp\novel` 下有 `new/`、`1999/`），必须 `-ProjectRoot` 指定目标项目，否则兄弟目录搜索可能命中错误项目 |
 
 🔴 **N 必须替换为实际章节数字**（如 `19`），不可写字面量 `N`。`validate-chapter.ps1` 的 `-Chapter` 也可传字符串 `All`。
 
@@ -58,8 +58,8 @@ enabled: true
 所有脚本通过 `$PSScriptRoot` 自动推算项目根路径，**无需事先 cd 到项目目录**。直接用相对或绝对路径指向脚本文件即可：
 
 ```
-✅ pwsh -NoProfile -File .codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
-✅ pwsh -NoProfile -File d:/write/novel/女帝/.codebuddy/scripts/build-context-bundle.ps1 -Chapter 19
+✅ pwsh -NoProfile -File .dsh/scripts/build-context-bundle.ps1 -Chapter 19
+✅ pwsh -NoProfile -File d:/write/novel/女帝/.dsh/scripts/build-context-bundle.ps1 -Chapter 19
 ```
 
 两者效果完全相同，脚本内部都能正确找到 `novel/`、`novel/chapters/` 等目录。
