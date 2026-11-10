@@ -291,7 +291,7 @@ check('catalog declares a GitHub Release tarball and a real GitHub-hosted raster
 });
 // PM R3-O6: the local example snippet pins the same stable code commit as the
 // hosted index so the two artifacts cannot silently diverge.
-check('index-snippet commit is the stable published v2.0.0 code commit', () => {
+check('index-snippet commit is the stable published code commit', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
   match(idx.plugins[0].versions[0].source.commit, /^[0-9a-f]{40}$/, '40-hex SHA');
 });
