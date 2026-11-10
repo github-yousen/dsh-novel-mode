@@ -87,3 +87,19 @@ tarball: https://github.com/github-yousen/dsh-novel-mode/releases/download/v2.0.
 **后续不在我方自动化范围**：维护者人工评审（读源码核对描述、分类、重复、可疑代码）→ 合并 → 站点自动重建 → `plugins.json` / `dsh-plugin-catalog` 更新 → dshmarket 通常一天内收录。若被打 `held: author`，把修复推到同一分支并只留一条评论。
 
 **后台作业**：`pwsh-f056f8a0a2304ffd`（22 分钟超时，已结束）、`pwsh-b6814fea2e5b44d0`（已捕获 gate success，已结束）。两次均为只读轮询，token 仅读入内存、从未打印。
+
+---
+
+## 终记：v2.1.0 最终 head `8eb60cc`（2026-11-11 01:51 +08 / 2026-11-10 17:50 UTC）
+
+多方评审修复发布为 v2.1.0 后，catalog 的 `tarball:` 更新为 v2.1.0 并推送到 fork 分支（head `8eb60cc`），再次触发完整 `PR check` → `Submission gate` 链：
+
+| 项 | 结果 |
+|---|---|
+| `PR check`（head `8eb60cc`） | ✅ **success**（17:05:54Z 启动 → 17:50 前完成，18/18 步 success，0 failure；Build 站点构建耗时长） |
+| `Submission gate`（head `8eb60cc`） | ✅ **SUCCESS**（17:50:46Z 完成） |
+| gate `output.title` | `Entries look good` |
+| gate `output.summary`（原文） | `All 1 submitted entry passes: dsh.bundle declared, repo old enough, enough commits.` |
+| PR #13689 | **open、未合并**（`merged=false`），`changed_files=1`，无 label / 无评论，`mergeable=true` |
+
+两条独立通道结论逐字一致：后台轮询作业 `pwsh-ecbdc1690dd64595`（`FINAL GATE=success`）与 lead 直接 API 读取。`schedule-ff46ab16`（01:50 +08）亦已到点。**官方目录侧 CI 全部通过；仅剩上游维护者人工评审与合并**，属外部环节，不宣称已合并。
