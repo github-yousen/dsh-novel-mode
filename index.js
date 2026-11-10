@@ -3,8 +3,9 @@
  *
  * This bundle contributes ONE selectable mode ("小说模式", declared as a
  * `@deepseek-ai/dsh-agent-preset` row in cordis.patch.yml) and a QUIET,
- * deterministic workflow engine. No persona prose, no system-prompt section,
- * no injected workflow brief, no user-visible prompt text, no surfaced errors.
+ * deterministic workflow engine. No persona prose, no injected workflow brief,
+ * no user-visible prompt text, no surfaced errors. One short tool-routing
+ * `systemPrompt.section` tells the model WHICH tool to call (not how to write).
  *
  * Layers:
  *   lib/orchestrator.js  pure deterministic state machine (importable, testable)
