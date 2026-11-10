@@ -59,7 +59,7 @@ SubAgent 启动后，按以下顺序加载：
      - **桥段是否重复**：新排的冲突/桥段/打脸方式是否与早期章节雷同（重复 = 读者弃书主因）
      - **伏笔是否遗忘**：台账中"未回收"且埋设已久的伏笔，优先安排在本批回收
      - **专名是否漂移**：复用早期地名/组织/功法/物品时按词表原样引用，不得改写
-   - 文件不存在（旧项目未生成）→ 执行 `pwsh -NoProfile -File .codebuddy/scripts/build-memory-digest.ps1 -Rebuild` 生成后再加载；仍失败则在返回摘要中标注"长期记忆未覆盖"
+   - 文件不存在（旧项目未生成）→ 执行 `pwsh -NoProfile -File .dsh/scripts/build-memory-digest.ps1 -Rebuild` 生成后再加载；仍失败则在返回摘要中标注"长期记忆未覆盖"
 </context_loading>
 
 <outline_generation_rules>
