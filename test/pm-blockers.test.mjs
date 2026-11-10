@@ -66,7 +66,7 @@ check('B1 gateForStage resolves a real script for each BATCH sub-step that has o
   writeFileSync(join(proj, 'novel', 'outline.md'), '# o');
   let tool;
   const ctx = {
-    skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, on: () => () => {},
+    skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, systemPrompt: { section: () => () => {} }, on: () => () => {},
     get: (k) => k === 'workingDirectory' ? { get: () => proj } : undefined,
   };
   idx.apply(ctx);
@@ -113,7 +113,7 @@ check('B2 adjudicatedGate accepts PASS with real evidence only', () => {
 });
 check('B2 Host tool exposes dispatch + verify actions', () => {
   let tool;
-  const ctx = { skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, on: () => () => {}, get: () => undefined };
+  const ctx = { skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, systemPrompt: { section: () => () => {} }, on: () => () => {}, get: () => undefined };
   idx.apply(ctx);
   const acts = tool.parameters.properties.action.enum;
   return acts.includes('dispatch') && acts.includes('verify') && 'verdicts' in tool.parameters.properties;
@@ -122,7 +122,7 @@ check('B2 Host tool exposes dispatch + verify actions', () => {
   const temp = mkdtempSync(join(tmpdir(), 'nm-b2-'));
   const proj = join(temp, 'p'); mkdirSync(proj, { recursive: true });
   let tool;
-  const ctx = { skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, on: () => () => {}, get: (k) => k === 'workingDirectory' ? { get: () => proj } : undefined };
+  const ctx = { skills: { register: () => () => {} }, tools: { register: (d) => { tool = d; return () => {}; } }, systemPrompt: { section: () => () => {} }, on: () => () => {}, get: (k) => k === 'workingDirectory' ? { get: () => proj } : undefined };
   idx.apply(ctx);
   const agent = { session: { header: { cwd: proj } } };
   const run = (a) => tool.execute(a, { agent });
@@ -154,7 +154,7 @@ check('B2 Host tool exposes dispatch + verify actions', () => {
 }
 check('B4 engine-controlled skills are not user-invocable', () => {
   let registered = [];
-  const ctx = { skills: { register: (d) => { registered.push(d); return () => {}; } }, tools: { register: () => () => {} }, on: () => () => {}, get: () => undefined };
+  const ctx = { skills: { register: (d) => { registered.push(d); return () => {}; } }, tools: { register: () => () => {} }, systemPrompt: { section: () => () => {} }, on: () => () => {}, get: () => undefined };
   idx.apply(ctx);
   const batch = registered.find(r => r.name === 'novel-batch');
   const write = registered.find(r => r.name === 'novel-write');
