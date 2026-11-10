@@ -340,4 +340,15 @@ check('agent/created also materializes for a novel-preset session', () => {
 });
 
 T.dispose();
+check('shipped assets contain NO .codebuddy path references (clean-profile must work)', () => {
+  // QA F3: skills/agents/rules referenced `.codebuddy/...` but a fresh install
+  // materializes ONLY `.dsh/`. Any surviving reference is a broken path.
+  const offenders = walk(ASSET_DSH).filter((p) => {
+    const full = join(ASSET_DSH, p);
+    if (!isFile(full) || /__pycache__|\.pyc$/.test(p)) return false;
+    try { return readText(full).includes('.codebuddy'); } catch { return false; }
+  });
+  eq(offenders.length, 0, `no .codebuddy refs (found: ${offenders.slice(0, 5).join(', ')})`);
+});
+
 finish(SUITE);
