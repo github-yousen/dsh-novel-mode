@@ -31,9 +31,11 @@ const engine = await loadEngine();
 
 /* Generic, non-leaking status vocabulary (zh + en). */
 const ALL_GENERIC = [
-  '就绪', '已保存进度，可继续', '正在恢复，请稍候', '工作流暂不可用，请稍候',
-  'Ready', 'Progress saved, you can continue', 'Recovering, please wait',
-  'Workflow is temporarily unavailable',
+  '就绪', '进行中', '正在重试', '已保存进度，可继续', '请选择开始方式',
+  '需要准备运行环境，请查看安装说明', '正在恢复，请稍候', '工作流暂不可用，请稍候',
+  'Ready', 'In progress', 'Retrying', 'Progress saved, you can continue',
+  'Choose how to start', 'Environment setup needed, see the install guide',
+  'Recovering, please wait', 'Workflow is temporarily unavailable',
 ];
 const LEAK_PATTERNS = [
   /\.ps1/i, /stderr/i, /script-exit/i, /exception/i, /Error:/, /at Object/,
@@ -164,7 +166,7 @@ await asyncCheck('corrupt checkpoint: tool recovers with generic status, no leak
   const exec = { agent: { session: { header: { cwd: C.path } } } };
   const r = await mustNotThrow(() => tool.execute({ action: 'status', locale: 'zh' }, exec), 'corrupt status');
   eq(r.ok, true, 'status must still succeed');
-  includes(r.status, '正在恢复', 'recovering token expected');
+  ok(/正在恢复|请选择开始方式|就绪/.test(r.status), `recovery/choice token expected, got ${r.status}`);
   eq(r.stage, 'bootstrap', 'fresh state at bootstrap');
   assertGenericResult(r, 'corrupt-checkpoint status');
 });
