@@ -229,7 +229,7 @@ pwsh -NoProfile -File .dsh/scripts/analyze-roster.ps1 -Chapter N
 9. **文风 / 节奏风险 + AI味检测**（`chapter` / `chapter-full` 仅作 WARNING 输出）
    - 仅在证据明确时提示：连续大段纯对话无动作承接、连续场景推进过平、章末钩子偏弱、关键信息埋没在冗余描写中
    - **AI味检测**：清单体（连续多句同构短句/一句一行）、机械连接词（首先/其次/仿佛/综上所述）、整章无内心流、通篇"了/的/然后"高频词、所有动机都被直白解释（无留白）→ 均标记 WARNING，附位置
-   - 🔴 **主动参考 humanizer-zh 技能**：执行本项前读取 `.dsh/skills/Humanizer-zh/SKILL.md`（如文件不存在则跳过），将其 24 种 AI 写作痕迹 / 快速检查清单并入本项判定依据，技能未覆盖处按本项目规则执行
+   - 🔴 **主动参考 humanizer-zh 技能**：执行本项前用 `use_skill humanizer-zh` 加载规则，将其 24 种 AI 写作痕迹 / 快速检查清单并入本项判定依据，技能未覆盖处按本项目规则执行
    - 🔴 这类问题默认**不单独拆新 Agent**，由主会话在回修时顺手做最小优化
    - 若文风/节奏问题已经导致 design / outline 的关键承诺未兑现，则按兑现失败直接升级到对应的 `CRITICAL`
 
