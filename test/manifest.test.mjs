@@ -246,4 +246,15 @@ check('LICENSE / CHANGELOG.md / README.md / README.zh.md all exist', () => {
   for (const f of ['LICENSE', 'CHANGELOG.md', 'README.md', 'README.zh.md']) ok(isFile(join(ROOT, f)), `missing ${f}`);
 });
 
+check('make-tarball.py wraps every entry in a single package/ prefix (pnpm-safe)', () => {
+  // Upstream awesome-dsh-plugin PR #13689 maintainer feedback: pnpm strips the
+  // first path segment when extracting a tgz, so a root-level layout flattens
+  // lib/x.js -> x.js and the installed plugin cannot find its own files.
+  const py = readText(join(ROOT, 'assets/make-tarball.py'));
+  match(py, /PREFIX\s*=\s*["']package\/["']/, 'single package/ wrapper');
+  match(py, /arcname\s*=\s*PREFIX\s*\+\s*rel/, 'arcname uses the wrapper');
+  match(py, /assert\s+not\s+bad|assert\s+bad\s*==\s*\[\]/, 'asserts no entry lacks the prefix');
+  noMatch(py, /arcname\s*=\s*rel\b/, 'must not add root-level arcname');
+});
+
 finish(SUITE);
