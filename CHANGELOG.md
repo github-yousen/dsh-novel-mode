@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.1.1 — pnpm-safe tarball layout (upstream maintainer feedback, 2026-11-11)
+
+After PR #13689 was merged, upstream maintainer `fkysly` reported that the
+v2.1.0 Release tarball used a **root-level layout** (`index.js`, `lib/...` at the
+archive root). `pnpm` strips the first path segment when extracting a `.tgz`, so
+subdirectory entries would be flattened (`lib/x.js` → `x.js`) and an install
+from the tarball would find only the entry point, not the rest of the plugin.
+They removed `tarball:` from the merged catalog entry (the site now installs via
+`github:github-yousen/dsh-novel-mode`).
+
+- `assets/make-tarball.py` now wraps **every** entry in a single `package/`
+  prefix (`arcname="package/" + rel`), the npm/pnpm tarball convention, and
+  asserts no entry lacks the prefix. Verified: 111/111 entries prefixed, 0 bad.
+- Added a `manifest.test.mjs` regression so a root-level `arcname=rel` cannot
+  silently return.
+- Rebuilt and replaced the v2.1.1 Release asset (471373 B). Catalog/install
+  docs now state the `github:` source as primary; the prebuilt tarball is the
+  optional pnpm-safe alternative.
+- Full suite: **10/10 suites, 298/298 assertions, exit 0**.
+
 ## 2.1.0 — multi-angle team review: real-workflow correctness + usability (2026-11-11)
 
 A 5-angle review team (architecture / usability / security / QA / product) plus the
