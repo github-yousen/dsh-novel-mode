@@ -1,4 +1,4 @@
-# 小说模式 · Novel Mode
+# 小说工作台 · Novel Workbench
 
 > **From one idea to a finished, consistency-checked novel — a deterministic writing engine that runs the stages for you, so you never babysit a prompt.**
 >
@@ -7,16 +7,18 @@
 [中文](README.zh.md) · [License: MIT](LICENSE) · [Market entry](market/data/plugins/github-yousen__dsh-novel-mode.yml)
 
 Most "writing assistants" are a prompt pack: you paste instructions, the model
-*might* follow them, and you re-check every chapter by hand. **小说模式 is an
+*might* follow them, and you re-check every chapter by hand. **小说工作台 is an
 engine, not a prompt.** A real JavaScript state machine owns the stage order,
 the gates, the retries and the checkpoints. The model is a *worker* the engine
-calls at specific stages — it never decides whether a chapter passed.
+calls at specific stages — it never decides whether a chapter passed. The whole
+product is one sidebar entry「小说」and one panel「小说工作台」; there is no mode
+to switch and no prompt to paste.
 
 ![Novel Mode capability overview](assets/screenshot-1.png)
 
 ## Why it is different
 
-| Prompt pack | 小说模式 engine |
+| Prompt pack | 小说工作台 engine |
 |---|---|
 | A paragraph telling the model "act as a finite state machine" | An actual `STAGE_GRAPH` transition table in `lib/orchestrator.js`; illegal transitions are rejected |
 | Quality decided by the model's opinion | PowerShell validators decide (`validate-chapter.ps1`: 13 hard checks); a gate **cannot** be flipped by model text |
@@ -26,7 +28,10 @@ calls at specific stages — it never decides whether a chapter passed.
 
 ## What it does
 
-- **Select 小说模式** in the session's mode dropdown. That is the entire UI.
+- Open the **小说** sidebar entry → the **小说工作台** panel. That is the entire UI.
+- Bind a novel-project directory once in the panel; start a run, choose how to
+  begin, and drive stages from the panel buttons. The panel and the agent tool
+  call the SAME Host `drive()` function through `/novel/api`.
 - The engine runs a **7-stage DAG** (constitution → outline → design → write →
   validate → batch → export) plus three bootstrap branches (guided constitution,
   disassemble/reskin, import an existing manuscript). `BATCH` is a nested,
@@ -56,14 +61,16 @@ dsh plugin --profile <profile> add https://github.com/github-yousen/dsh-novel-mo
 # plugin_manager install_bundle with target = absolute path to this directory
 ```
 
-Then **restart DeepSeek Harness** (a mere page refresh does not reload the new `cordis.patch.yml` preset row), open the mode dropdown, pick **小说模式**, and describe
-what you want to write. The engine takes it from there.
+Then **restart DeepSeek Harness** (a fresh `dsh.client` manifest needs a Host
+restart). The sidebar gains a「小说」entry; open the **小说工作台** panel, bind a
+novel-project directory, and start a run from the panel buttons. No mode
+dropdown, no slash command, no prompt to paste.
 
 ### 30-second try it
 
 ```text
-You: 帮我从零搭一个都市悬疑的世界观，再写第 1 章
-Model → novel_orchestrate(start → select-branch constitution → …)
+Open 小说 entry → 小说工作台 panel
+Bind project dir → click Start → choose「从零搭建」→ the panel drives the engine
 You see: 阶段：准备开始 · 请选择开始方式   →   阶段：撰写正文 · 第 1 章 · 进行中
 ```
 
@@ -80,16 +87,19 @@ run **pauses** — it never silently passes and never crashes.
 ## Architecture (short)
 
 ```
-user picks mode ──▶ novel_orchestrate tool (Host)
-                       │
-        lib/orchestrator.js  ← pure, importable, unit-tested
-        STAGE_GRAPH / BATCH_SUBSTEPS / advance() / gate() / adjudicate()
-        loadState() / saveState()  → .dsh/state/novel-mode.checkpoint.json
-                       │
-        workers: 21 runtime skills (creative stages only)
-        validators: pwsh scripts (authority for quality)
-                       │
-        structured status only — no prose, no errors, no prompts
+小说 sidebar entry ──▶ 小说工作台 panel (Client, main keyed slot)
+                        │ POST /novel/api {project, args}
+                        ▼
+              index.js drive(args, project)   ◀── novel_orchestrate agent tool
+                        │                         (same function, two callers)
+         lib/orchestrator.js  ← pure, importable, unit-tested
+         STAGE_GRAPH / BATCH_SUBSTEPS / advance() / gate() / adjudicate()
+         loadState() / saveState()  → .dsh/state/novel-mode.checkpoint.json
+                        │
+         workers: 21 model-only skills (from package assets/.dsh/skills/)
+         validators: pwsh scripts in project .dsh/scripts/ (quality authority)
+                        │
+         structured status only — no prose, no errors, no prompts
 ```
 
 Full details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
