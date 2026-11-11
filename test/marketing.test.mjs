@@ -277,7 +277,9 @@ check('version in index-snippet / CHANGELOG / package.json is consistent (no sta
 check('PM-M1: no version-bearing surface still advertises an OLD current version', () => {
   // A 5-angle review + PM R2 found PR_STATE / ARCHITECTURE / SUBMISSION_STEPS
   // drifting to older versions. Guard the current version across all surfaces.
-  const old = ['2.0.0', '2.0.1'];
+  // Historical mentions are fine; only a tarball pinned to a tag OTHER than
+  // the current version is real drift. Build the regex from pkg.version so it
+  // stays correct on every future bump.
   const surfaces = {
     'market/PR_STATE.md': (t) => t,
     'docs/ARCHITECTURE.md': (t) => t.split('\n').slice(0, 8).join('\n'),
@@ -285,12 +287,13 @@ check('PM-M1: no version-bearing surface still advertises an OLD current version
     'README.md': (t) => t,
     'README.zh.md': (t) => t,
   };
+  const esc = pkg.version.replace(/\./g, '\\.');
+  const oldTarball = new RegExp(`releases/download/v(?!${esc}/)[\\d.]+/dsh-novel-mode\\.tgz`);
+  const oldLabel = new RegExp(`\\*\\*v(?!${esc}\\s*—)[\\d.]+\\s*—`);
   for (const [rel, pick] of Object.entries(surfaces)) {
     const t = pick(texts[rel] ?? '');
-    // Historical mentions are fine; only a "current version: vX" style claim or
-    // a tarball pinned to an old tag is a real drift.
-    noMatch(t, /releases\/download\/v2\.0\.[01]\//, `${rel} must not pin an old tarball`);
-    noMatch(t, /\*\*v2\.0\.[01]\s*—/, `${rel} must not label v2.0.x as the current product`);
+    noMatch(t, oldTarball, `${rel} must not pin an old tarball`);
+    noMatch(t, oldLabel, `${rel} must not label an old version as current`);
   }
   // The catalog tarball must point at the CURRENT version.
   const yml = texts['market/data/plugins/github-yousen__dsh-novel-mode.yml'] ?? '';
