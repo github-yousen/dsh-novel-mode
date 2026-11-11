@@ -1,24 +1,15 @@
 /**
- * 小说模式 (Novel Mode) — Host adapter.
+ * 小说工作台 (Novel Workbench) — Host adapter.
  *
- * This bundle contributes ONE selectable mode ("小说模式", declared as a
- * `@deepseek-ai/dsh-agent-preset` row in cordis.patch.yml) and a QUIET,
- * deterministic workflow engine. No persona prose, no injected workflow brief,
- * no user-visible prompt text, no surfaced errors. One short tool-routing
- * `systemPrompt.section` tells the model WHICH tool to call (not how to write).
+ * ONE Client panel (sidebar.panellist + main keyed panel) is the sole user
+ * surface. No agent preset, no mode dropdown, no persona prose, no user-visible
+ * workflow prompt. The engine is a deterministic JS state machine.
  *
- * Layers:
- *   lib/orchestrator.js  pure deterministic state machine (importable, testable)
- *   index.js             Host adapter: registers the 21 runtime skills, one
- *                        orchestration tool, silent .dsh/ materialization, and
- *                        translates every internal failure into a generic,
- *                        localized status token.
- *
- * The engine, not the model, decides stage order, gates, retries, checkpointing
- * and resume. The model is a worker invoked at specific stages via the skills
- * already registered. The tool returns structured JSON only; on any failure it
- * returns { ok:false, code } and never leaks stderr, script names, exception
- * text, or internal verdicts.
+ *   lib/orchestrator.js  pure deterministic state machine
+ *   index.js             Host: 21 model-only runtime skills, one agent tool,
+ *                        one Client-callable HTTP route (both call drive()),
+ *                        white-list .dsh/ materialization, generic status tokens
+ *   client.js            Web Client: the 小说工作台 panel
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, renameSync, cpSync, statSync } from 'node:fs';
@@ -30,13 +21,17 @@ import * as engine from './lib/orchestrator.js';
 /** Cordis plugin display name. */
 export const name = 'novel-mode';
 
-/** Required registries. Optional services are read defensively with ctx.get. */
+/** Required registries. `webServer` is optional and read defensively. */
 export const inject = ['skills', 'tools', 'systemPrompt'];
+
+/** Project-side white-list: only files the .ps1/.py scripts actually read. */
+const MATERIALIZE_ENTRIES = ['scripts', 'templates', 'config.yaml', 'charset.json'];
+/** All skills are model-only: none appear in the user-facing / menu (Q14). */
+const USER_INVOCABLE = new Set();
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ASSET_DSH = join(here, 'assets', '.dsh');
 const ASSET_SKILLS = join(ASSET_DSH, 'skills');
-const PRESET_ID = 'novel';
 
 const DIRECTORY_OF_SKILL = { 'humanizer-zh': 'Humanizer-zh' };
 const SKILL_NAME_OF_DIRECTORY = { 'Humanizer-zh': 'humanizer-zh' };
@@ -123,7 +118,12 @@ function descriptionFromFrontmatter(body, fallback) {
   return value;
 }
 
-/** Idempotent, non-overwriting install of the bundled .dsh/ working copy. */
+/**
+ * Idempotent, non-overwriting install of the WHITE-LISTED .dsh/ working files.
+ * Only scripts/ (incl. lib/ siblings), templates/, config.yaml, charset.json
+ * are copied. skills/, agents/, AGENTS.md, rules/ stay ONLY in the package:
+ * skill bodies are registered from ASSET_SKILLS with resourceBase pointing there.
+ */
 function materialize(projectRoot) {
   if (!existsSync(ASSET_DSH)) throw new Error('assets-missing');
   const target = join(projectRoot, '.dsh');
@@ -140,8 +140,18 @@ function materialize(projectRoot) {
       else { cpSync(from, to); created += 1; }
     }
   };
-  copyTree(ASSET_DSH, target);
-  return { target, created, kept };
+  for (const name of MATERIALIZE_ENTRIES) {
+    const src = join(ASSET_DSH, name);
+    if (!existsSync(src)) continue;
+    if (statSync(src).isDirectory()) copyTree(src, join(target, name));
+    else {
+      mkdirSync(target, { recursive: true });
+      const to = join(target, name);
+      if (existsSync(to)) kept += 1;
+      else { cpSync(src, to); created += 1; }
+    }
+  }
+  return { target, created, kept, entries: MATERIALIZE_ENTRIES.slice() };
 }
 
 function projectRootOf(session, ctx) {
@@ -223,6 +233,158 @@ function publicPlan(p) {
   return out;
 }
 
+/**
+ * The SINGLE operation behind both the agent tool and the Client HTTP route.
+ * @param {Record<string, unknown>} args - typed action payload.
+ * @param {string} project - absolute novel-project root.
+ * @returns structured, localized, non-leaking result.
+ */
+function drive(args, project) {
+  const locale = args?.locale === 'en' ? 'en' : 'zh';
+  let root;
+  try {
+    if (!project || typeof project !== 'string' || project.length < 2) throw new Error('no-project');
+    root = resolve(project);
+    materialize(root);
+  } catch {
+    return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'NO_PROJECT' };
+  }
+
+  // Every branch below is wrapped: internal failures never surface.
+  try {
+    const io = createIo(root);
+    const loaded = engine.loadState(io, root, { goal: args?.goal ?? '' });
+    let state = loaded.state;
+    const action = args?.action ?? 'status';
+
+    if (action === 'status') {
+      return { ok: true, status: statusOf({ ...state, recovered: loaded.recovered }, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)) };
+    }
+
+    // Build a typed event; reject any free-text control payload.
+    const event = { type: action, at: io.now() };
+    // F2 fix: a linear-stage gate needs the caller's chapter for scripts
+    // like validate-chapter.ps1 (-Chapter N). Build one state snapshot that
+    // carries it and use it for EVERY gate computation in this call.
+    const chapter = args?.chapter !== undefined ? args.chapter : state.chapter;
+    const gateState = chapter === null || chapter === undefined
+      ? state
+      : { ...state, chapter };
+    if (action === 'start' || action === 'reset') {
+      if (args?.goal !== undefined) event.goal = String(args.goal).slice(0, 500);
+    } else if (action === 'select-branch') {
+      event.branch = args?.branch;
+    } else if (action === 'batch-step') {
+      event.chapter = args?.chapter ?? state.chapter;
+      event.step = args?.step ?? state.batchStep;
+      event.totalChapters = args?.totalChapters ?? state.totalChapters;
+      // Enforce the typed-dispatch allowlist before mutating anything.
+      const dv = engine.validateDispatch(engine.dispatchArgs({ ...state, chapter: args?.chapter ?? state.chapter, batchStep: args?.step ?? state.batchStep, totalChapters: args?.totalChapters }));
+      if (!dv.ok) return { ok: false, status: STATUS_TEXT[locale].paused, code: 'DISPATCH_REJECTED' };
+    } else if (action === 'gate-fail') {
+      // Classify only: raw caller text is NEVER accepted into the state.
+      // Failures come from the deterministic gate verdict, not from the
+      // model. This closes the NG-3 leak where arbitrary strings could be
+      // echoed back through summarize().
+      const verdict = engine.gate(state.stage, io, root, gateState);
+      event.failures = verdict.failures.slice(0, 20);
+    }
+    if (args?.chapter !== undefined && action !== 'batch-step') event.chapter = args.chapter;
+
+    // For gate events, run the deterministic gate FIRST (stage gate OR the
+    // BATCH sub-step gate via gateForStage inside engine.gate — B1). A model
+    // cannot assert PASS: only a real script verdict can produce gate-pass.
+    if (action === 'gate-pass' || action === 'gate-fail') {
+      const verdict = engine.gate(state.stage, io, root, gateState);
+      // B3: a DEGRADED / skipped verdict is NEVER a pass. Only a real
+      // PASS (ok=true, status='PASS', skipped=false) may advance.
+      const isRealPass = verdict.ok === true && verdict.status === 'PASS' && verdict.skipped !== true;
+      if (action === 'gate-pass' && !isRealPass) {
+        const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: verdict.failures.length ? verdict.failures : [verdict.status] });
+        state = failed.ok ? failed.state : state;
+        engine.saveState(io, root, state);
+        return { ok: false, status: verdict.status === 'DEGRADED' ? STATUS_TEXT[locale].needSetup : STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: verdict.status === 'DEGRADED' ? 'GATE_DEGRADED' : 'GATE_REFUSED' };
+      }
+      if (action === 'gate-fail' && isRealPass) {
+        // Script says PASS; a claimed failure is ignored (no model veto).
+        return { ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: 'GATE_PASS_CONFIRMED' };
+      }
+    }
+
+    // B2: `dispatch` is the engine-driven worker path. It returns the
+    // typed role + allowlisted args the Host must use for a subagent, and
+    // `verify` adjudicates returned verdicts against truth files before a
+    // gate can pass. No free text ever enters the control path.
+    if (action === 'dispatch' || action === 'verify') {
+      const decision = engine.dispatchFor(state);
+      if (action === 'dispatch') {
+        return {
+          ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage,
+          state: publicState(state),
+          dispatch: { role: decision.role, args: decision.args, needsAdjudication: decision.needsAdjudication },
+          next: publicPlan(engine.plan(state)),
+        };
+      }
+      // verify: worker verdicts are passed as typed structured data only.
+      const workerVerdicts = Array.isArray(args?.verdicts) ? args.verdicts.slice(0, 16).map(v => ({
+        verdict: String(v?.verdict ?? ''),
+        evidenceRefs: Array.isArray(v?.evidenceRefs) ? v.evidenceRefs.filter(r => typeof r === 'string').slice(0, 32) : [],
+      })) : [];
+      const scriptVerdict = engine.gate(state.stage, io, root, gateState);
+      const gateLessReview = state.stage === 'batch' && engine.GATELESS_STEPS.has(state.batchStep)
+        && engine.REVIEW_STEPS.has(state.batchStep);
+      const combined = engine.adjudicatedGate(scriptVerdict, workerVerdicts, engine.truthResolver(io, root));
+      if (!combined.ok) {
+        const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: [combined.status] });
+        state = failed.ok ? failed.state : state;
+        engine.saveState(io, root, state);
+        return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: combined.status === 'NOT_COVERED' ? 'WORKER_NO_EVIDENCE' : 'ADJUDICATION_FAILED' };
+      }
+      // A gate-less review step has NO script to pass: advance it with the
+      // dedicated `step-done` event, never a fabricated `gate-pass` (F1/F3).
+      const pastType = gateLessReview ? 'step-done' : 'gate-pass';
+      const passed = engine.advance(state, { type: pastType, at: io.now() });
+      if (!passed.ok) {
+        return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
+      }
+      state = passed.state;
+      engine.saveState(io, root, state);
+      return { ok: true, status: statusOf(state, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)), code: 'ADJUDICATED_PASS' };
+    }
+
+    // `step-done` advances a gate-less BATCH sub-step (creative/review work
+    // with no validator). It is the only way those 9 sub-steps move, so the
+    // 100-chapter loop is reachable through the tool flow (F1 fix).
+    if (action === 'step-done') {
+      const result = engine.advance(state, { type: 'step-done', at: io.now() });
+      if (!result.ok) {
+        return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
+      }
+      state = result.state;
+      engine.saveState(io, root, state);
+      return { ok: true, status: statusOf(state, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)), code: 'STEP_DONE' };
+    }
+
+    const result = engine.advance(state, event);
+    if (!result.ok) {
+      return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
+    }
+    state = result.state;
+    engine.saveState(io, root, state);
+    return {
+      ok: true,
+      status: statusOf(state, locale),
+      stage: state.stage,
+      state: publicState(state),
+      next: publicPlan(engine.plan(state)),
+    };
+  } catch {
+    // Generic, localized, non-leaking. No exception text, no stderr, no
+    // script name, no exit code, no stack trace (NG-3, AC-12).
+    return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'ENGINE_UNAVAILABLE' };
+  }
+}
+
 export function apply(ctx) {
   // ONE short routing rule (not a workflow prompt group): it tells the model
   // WHICH tool drives the engine, never how to write a novel. Stage order,
@@ -231,14 +393,14 @@ export function apply(ctx) {
     name: 'novel:mode-route',
     order: 1960,
     text: [
-      'When 小说模式 is the selected mode and the user asks to write, plan, outline,',
-      'design, continue, batch-write, validate, disassemble or import a novel, use the',
-      'novel_orchestrate tool to drive the workflow: call status first (resume a prior',
-      'run if the state is not idle/done), then start → select-branch → follow the',
-      "engine's `next` action. For BATCH sub-steps with no validator use step-done;",
-      'for review steps use dispatch → verify with typed worker verdicts. Never decide',
-      'stage order or quality yourself — only real script verdicts advance gates.',
-      'Load a novel-* skill only when the engine names it as the current worker.',
+      'When the user asks to write, plan, outline, design, continue, batch-write,',
+      'validate, disassemble or import a novel, use the novel_orchestrate tool to',
+      'drive the workflow: call status first (resume a prior run if the state is',
+      "not idle/done), then start → select-branch → follow the engine's `next` action.",
+      'For BATCH sub-steps with no validator use step-done; for review steps use',
+      'dispatch → verify with typed worker verdicts. Never decide stage order or',
+      'quality yourself — only real script verdicts advance gates. Load a novel-*',
+      'skill only when the engine names it as the current worker.',
     ].join('\n'),
   });
 
@@ -254,9 +416,8 @@ export function apply(ctx) {
       content: body,
       source: 'runtime',
       whenToUse: SKILL_DESCRIPTIONS[skill] ?? skill,
-      // Batch/write are engine-controlled stages: users must not invoke them
-      // directly from the / menu (that path bypasses the deterministic gates).
-      invocation: { modelInvocable: true, userInvocable: !ENGINE_CONTROLLED_SKILLS.has(skill) },
+      // Q14: every skill is model-only; the panel is the sole user surface.
+      invocation: { modelInvocable: true, userInvocable: USER_INVOCABLE.has(skill) },
       resourceBase: { kind: 'directory', path: join(ASSET_SKILLS, dir) },
     });
   }
@@ -329,171 +490,44 @@ export function apply(ctx) {
     async execute(args, exec) {
       const agent = exec?.agent;
       const locale = args?.locale === 'en' ? 'en' : 'zh';
+      if (!agent) return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'NO_SESSION' };
       let project;
-      try {
-        if (!agent) throw new Error('no-agent');
-        project = projectRootOf(agent.session, ctx);
-      } catch {
-        return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'NO_SESSION' };
-      }
-
-      // Every branch below is wrapped: internal failures never surface.
-      try {
-        const io = createIo(project);
-        const loaded = engine.loadState(io, project, { goal: args?.goal ?? '' });
-        let state = loaded.state;
-        const action = args?.action ?? 'status';
-
-        if (action === 'status') {
-          return { ok: true, status: statusOf({ ...state, recovered: loaded.recovered }, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)) };
-        }
-
-        // Build a typed event; reject any free-text control payload.
-        const event = { type: action, at: io.now() };
-        // F2 fix: a linear-stage gate needs the caller's chapter for scripts
-        // like validate-chapter.ps1 (-Chapter N). Build one state snapshot that
-        // carries it and use it for EVERY gate computation in this call.
-        const chapter = args?.chapter !== undefined ? args.chapter : state.chapter;
-        const gateState = chapter === null || chapter === undefined
-          ? state
-          : { ...state, chapter };
-        if (action === 'start' || action === 'reset') {
-          if (args?.goal !== undefined) event.goal = String(args.goal).slice(0, 500);
-        } else if (action === 'select-branch') {
-          event.branch = args?.branch;
-        } else if (action === 'batch-step') {
-          event.chapter = args?.chapter ?? state.chapter;
-          event.step = args?.step ?? state.batchStep;
-          event.totalChapters = args?.totalChapters ?? state.totalChapters;
-          // Enforce the typed-dispatch allowlist before mutating anything.
-          const dv = engine.validateDispatch(engine.dispatchArgs({ ...state, chapter: args?.chapter ?? state.chapter, batchStep: args?.step ?? state.batchStep, totalChapters: args?.totalChapters }));
-          if (!dv.ok) return { ok: false, status: STATUS_TEXT[locale].paused, code: 'DISPATCH_REJECTED' };
-        } else if (action === 'gate-fail') {
-          // Classify only: raw caller text is NEVER accepted into the state.
-          // Failures come from the deterministic gate verdict, not from the
-          // model. This closes the NG-3 leak where arbitrary strings could be
-          // echoed back through summarize().
-          const verdict = engine.gate(state.stage, io, project, gateState);
-          event.failures = verdict.failures.slice(0, 20);
-        }
-        if (args?.chapter !== undefined && action !== 'batch-step') event.chapter = args.chapter;
-
-        // For gate events, run the deterministic gate FIRST (stage gate OR the
-        // BATCH sub-step gate via gateForStage inside engine.gate — B1). A model
-        // cannot assert PASS: only a real script verdict can produce gate-pass.
-        if (action === 'gate-pass' || action === 'gate-fail') {
-          const verdict = engine.gate(state.stage, io, project, gateState);
-          // B3: a DEGRADED / skipped verdict is NEVER a pass. Only a real
-          // PASS (ok=true, status='PASS', skipped=false) may advance.
-          const isRealPass = verdict.ok === true && verdict.status === 'PASS' && verdict.skipped !== true;
-          if (action === 'gate-pass' && !isRealPass) {
-            const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: verdict.failures.length ? verdict.failures : [verdict.status] });
-            state = failed.ok ? failed.state : state;
-            engine.saveState(io, project, state);
-            return { ok: false, status: verdict.status === 'DEGRADED' ? STATUS_TEXT[locale].needSetup : STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: verdict.status === 'DEGRADED' ? 'GATE_DEGRADED' : 'GATE_REFUSED' };
-          }
-          if (action === 'gate-fail' && isRealPass) {
-            // Script says PASS; a claimed failure is ignored (no model veto).
-            return { ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage, state: publicState(state), gate: publicGate(verdict), code: 'GATE_PASS_CONFIRMED' };
-          }
-        }
-
-        // B2: `dispatch` is the engine-driven worker path. It returns the
-        // typed role + allowlisted args the Host must use for a subagent, and
-        // `verify` adjudicates returned verdicts against truth files before a
-        // gate can pass. No free text ever enters the control path.
-        if (action === 'dispatch' || action === 'verify') {
-          const decision = engine.dispatchFor(state);
-          if (action === 'dispatch') {
-            return {
-              ok: true, status: STATUS_TEXT[locale].ok, stage: state.stage,
-              state: publicState(state),
-              dispatch: { role: decision.role, args: decision.args, needsAdjudication: decision.needsAdjudication },
-              next: publicPlan(engine.plan(state)),
-            };
-          }
-          // verify: worker verdicts are passed as typed structured data only.
-          const workerVerdicts = Array.isArray(args?.verdicts) ? args.verdicts.slice(0, 16).map(v => ({
-            verdict: String(v?.verdict ?? ''),
-            evidenceRefs: Array.isArray(v?.evidenceRefs) ? v.evidenceRefs.filter(r => typeof r === 'string').slice(0, 32) : [],
-          })) : [];
-          const scriptVerdict = engine.gate(state.stage, io, project, gateState);
-          const gateLessReview = state.stage === 'batch' && engine.GATELESS_STEPS.has(state.batchStep)
-            && engine.REVIEW_STEPS.has(state.batchStep);
-          const combined = engine.adjudicatedGate(scriptVerdict, workerVerdicts, engine.truthResolver(io, project));
-          if (!combined.ok) {
-            const failed = engine.advance(state, { type: 'gate-fail', at: io.now(), failures: [combined.status] });
-            state = failed.ok ? failed.state : state;
-            engine.saveState(io, project, state);
-            return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: combined.status === 'NOT_COVERED' ? 'WORKER_NO_EVIDENCE' : 'ADJUDICATION_FAILED' };
-          }
-          // A gate-less review step has NO script to pass: advance it with the
-          // dedicated `step-done` event, never a fabricated `gate-pass` (F1/F3).
-          const pastType = gateLessReview ? 'step-done' : 'gate-pass';
-          const passed = engine.advance(state, { type: pastType, at: io.now() });
-          if (!passed.ok) {
-            return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
-          }
-          state = passed.state;
-          engine.saveState(io, project, state);
-          return { ok: true, status: statusOf(state, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)), code: 'ADJUDICATED_PASS' };
-        }
-
-        // `step-done` advances a gate-less BATCH sub-step (creative/review work
-        // with no validator). It is the only way those 9 sub-steps move, so the
-        // 100-chapter loop is reachable through the tool flow (F1 fix).
-        if (action === 'step-done') {
-          const result = engine.advance(state, { type: 'step-done', at: io.now() });
-          if (!result.ok) {
-            return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
-          }
-          state = result.state;
-          engine.saveState(io, project, state);
-          return { ok: true, status: statusOf(state, locale), stage: state.stage, state: publicState(state), next: publicPlan(engine.plan(state)), code: 'STEP_DONE' };
-        }
-
-        const result = engine.advance(state, event);
-        if (!result.ok) {
-          return { ok: false, status: STATUS_TEXT[locale].paused, stage: state.stage, state: publicState(state), code: 'TRANSITION_REJECTED' };
-        }
-        state = result.state;
-        engine.saveState(io, project, state);
-        return {
-          ok: true,
-          status: statusOf(state, locale),
-          stage: state.stage,
-          state: publicState(state),
-          next: publicPlan(engine.plan(state)),
-        };
-      } catch {
-        // Generic, localized, non-leaking. No exception text, no stderr, no
-        // script name, no exit code, no stack trace (NG-3, AC-12).
-        return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'ENGINE_UNAVAILABLE' };
-      }
+      try { project = projectRootOf(agent.session, ctx); }
+      catch { return { ok: false, status: STATUS_TEXT[locale].unavailable, code: 'NO_SESSION' }; }
+      return drive(args, project);
     },
   });
 
-  // --- silent .dsh/ materialization for sessions in 小说模式 ----------------
-  const ensureFor = (agent) => {
-    if (agent === undefined) return;
-    try {
-      const registry = ctx.get ? ctx.get('agentPresets') : undefined;
-      if (registry && typeof registry.presetForSession === 'function') {
-        const session = agent.session;
-        if (session && registry.presetForSession(session) !== PRESET_ID) return;
-      }
-      const root = projectRootOf(agent.session, ctx);
-      if (!root || root.length < 2) return;
-      materialize(root);
-    } catch {
-      // Never break session startup; never surface anything.
-    }
-  };
-  ctx.on('agent/created', ({ agent }) => ensureFor(agent));
-  ctx.on('agent-preset/selected', (sessionId, agentPreset) => {
-    if (agentPreset !== PRESET_ID) return;
-    const agents = ctx.get ? ctx.get('agents') : undefined;
-    const agent = agents && typeof agents.get === 'function' ? agents.get(sessionId) : undefined;
-    ensureFor(agent);
+  // --- Client-callable Host route (zero-dep @Remote equivalent, dshmarket pattern)
+  // `webServer` may become available AFTER this plugin activates on a fresh
+  // Host boot. Use ctx.inject so the route registers when the service is ready
+  // and is disposed automatically when either side tears down.
+  ctx.inject(['webServer'], (scoped) => {
+    const web = scoped.webServer;
+    if (!web || typeof web.register !== 'function') return;
+    web.register({
+      kind: 'exact',
+      path: '/novel/api',
+      handler: async (request, response) => {
+        const send = (code, obj) => {
+          const body = JSON.stringify(obj);
+          response.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+          response.end(body);
+        };
+        try {
+          if (request.method === 'OPTIONS') { send(204, {}); return; }
+          if (request.method !== 'POST') { response.writeHead(405, { allow: 'POST, OPTIONS' }); response.end(); return; }
+          const chunks = [];
+          for await (const c of request) chunks.push(c);
+          const raw = Buffer.concat(chunks).toString('utf8');
+          const payload = raw ? JSON.parse(raw) : {};
+          const project = typeof payload.project === 'string' ? payload.project : '';
+          const args = payload.args && typeof payload.args === 'object' ? payload.args : {};
+          send(200, drive(args, project));
+        } catch {
+          send(200, { ok: false, status: STATUS_TEXT.zh.unavailable, code: 'ENGINE_UNAVAILABLE' });
+        }
+      },
+    });
   });
 }
