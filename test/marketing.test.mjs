@@ -305,6 +305,16 @@ check('PM-M1: no version-bearing surface still advertises an OLD current version
   }
   noMatch(texts['index.js'] ?? '', /no system-prompt section/i, 'header must not deny the routing section');
   noMatch(texts['CHANGELOG.md'] ?? '', /292\/292|remain at v2\.0\.1/i, 'CHANGELOG current entry must not be stale');
+  // Version policy: the plugin is pre-1.0 until AC-38/AC-45 close. package.json
+  // must stay on the 0.x line; CHANGELOG must document the policy and the 1.0.0
+  // gate, and no surface may call a 2.x tag "current".
+  match(pkg.version, /^0\.\d+\.\d+$/, 'version stays on the 0.x polishing line');
+  const cl = texts['CHANGELOG.md'] ?? '';
+  match(cl, /版本策略/, 'CHANGELOG documents the version policy');
+  match(cl, /尚未发布 `1\.0\.0` 正式版/, 'CHANGELOG states 1.0.0 is not yet released');
+  match(cl, /AC-38/, 'CHANGELOG names the AC-38 gate for 1.0.0');
+  match(cl, /AC-45/, 'CHANGELOG names the AC-45 gate for 1.0.0');
+  match(cl, /2\.0\.0 \/ 2\.0\.1 \/ 2\.1\.0 \/ 2\.1\.1/, 'CHANGELOG preserves the 2.x history tags');
 });
 check('engines.dsh in catalog/index matches package.json', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
