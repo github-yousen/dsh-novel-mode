@@ -182,20 +182,33 @@ export function mockCtx(overrides = {}) {
   const tools = [];
   const events = {};
   const sections = [];
+  const routes = [];
   const o = overrides;
   return {
     skills: { register(d) { skills.push(d); return () => {}; } },
     tools: { register(d) { tools.push(d); return () => {}; } },
     systemPrompt: { section(s) { sections.push(s); return () => {}; } },
+    webServer: { register(r) { routes.push(r); return () => {}; } },
     on(name, fn) { (events[name] ||= []).push(fn); },
+    // Cordis `inject` waits for a service, then calls fn with a scoped context.
+    // In tests the service is already present, so invoke immediately.
+    inject(names, fn) {
+      const scoped = {};
+      for (const n of names) {
+        if (n === 'webServer') scoped.webServer = this.webServer;
+      }
+      const off = fn(scoped);
+      return typeof off === 'function' ? off : () => {};
+    },
     get(name) {
       if (o.get) { const r = o.get(name); if (r !== undefined) return r; }
+      if (name === 'webServer') return this.webServer;
       if (name === 'workingDirectory') return { get: (session) => o.cwdOf ? o.cwdOf(session) : (session?.header?.cwd ?? session?.cwd) };
       if (name === 'agentPresets') return { presetForSession: (session) => o.presetForSession ? o.presetForSession(session) : 'novel' };
       if (name === 'agents') return { get: () => o.agentGet ? o.agentGet() : undefined };
       return undefined;
     },
-    _skills: skills, _tools: tools, _events: events, _sections: sections,
+    _skills: skills, _tools: tools, _events: events, _sections: sections, _routes: routes,
   };
 }
 
