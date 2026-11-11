@@ -1,5 +1,31 @@
 # Changelog
 
+## 版本策略（2026-11-11 起）
+
+本插件**尚未发布 `1.0.0` 正式版**。最初建包时把起始号定成了 `2.0.0`，这是
+一个未经语义考量、也未经确认的历史决定：一个刚发布两天、仍在修安装布局的
+插件不应凭空宣称跨过两个大版本。经确认后**重开 `0.x` 打磨线**：
+
+- **当前版本 `0.2.0`** = 打磨期版本，等价于「功能齐备、待真实使用验收」。
+- `2.0.0 / 2.0.1 / 2.1.0 / 2.1.1` 四个 Release tag **保留为历史、不删除**
+  （避免破坏已发布 URL、文档引用与 PR 记录），但不再代表当前版本线。
+- 待 **AC-38**（真模型连续写多章 + 全书 `validate-chapter -Chapter All` PASS）
+  与 **AC-45**（全新独立 profile + 人工可视化点选下拉框）两项真实使用验收
+  完成后，发布 **`1.0.0`** 作为首个正式稳定版，之后按标准 SemVer 迭代。
+- 注意：SemVer 是单调的，`0.x` 在版本比较上小于 `2.1.1`。通过自托管
+  format-1 索引装过 2.1.1 的用户会看到一次**版本号回退**；官方目录
+  [PR #13689](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689)
+  的条目不含 `version`、走 `github:` 安装行，**因此不受本次重编号影响**。
+
+以下 2.x 章节为真实发布历史，按时间倒序保留原貌。
+
+## 0.2.0 — 重开 0.x 打磨线（2026-11-11）
+
+版本策略调整（见上）：`package.json`、自托管 format-1 索引、catalog 注释、
+CHANGELOG/PR_STATE/ARCHITECTURE/PR_BODY/SUBMISSION_STEPS 全部对齐 `0.2.0`；
+发布 `v0.2.0` Release（沿用 2.1.1 的 pnpm-safe `package/` tarball）。代码与
+`2.1.1` 相同，仅版本号与文档口径变化。全套 **10/10 suites、298/298 断言**。
+
 ## 2.1.1 — pnpm-safe tarball layout (upstream maintainer feedback, 2026-11-11)
 
 After PR #13689 was merged, upstream maintainer `fkysly` reported that the
