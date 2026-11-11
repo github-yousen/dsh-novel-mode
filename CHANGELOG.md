@@ -1,18 +1,46 @@
 # Changelog
 
+## 0.3.0 — panel-only form: 小说工作台 (2026-11-12)
+
+**Form change (user-directed reversal):** the `小说模式` agent preset / mode
+dropdown is **gone**. The plugin is now a two-half bundle whose sole user
+surface is a `sidebar.panellist` row「小说」+ a `main` keyed panel「小说工作台」.
+
+- `cordis.patch.yml` reduced to ONE Host row. Roster now has only the 4 shipped
+  presets (verified live: standard/ptc/minimal/cordis, `novelPreset=null`).
+- `package.json` gains `dsh.client` + `./client` export; [client.js](client.js)
+  registers the panel with `ctx.slots.inject('main', …)` / `('sidebar.panellist', …)`.
+- Host [index.js](index.js): the agent tool and the Client route both call the
+  SAME `drive(args, project)` function. The route is `/novel/api` (POST
+  `{project, args}` → structured result), registered via `ctx.inject(['webServer'], …)`
+  so it works on a fresh Host boot (verified HTTP 200).
+- `materialize()` is now a WHITE-LIST: only `scripts/`(+lib), `templates/`,
+  `config.yaml`, `charset.json` are copied into the project `.dsh/`. `skills/`,
+  `agents/`, `AGENTS.md`, `rules/` stay ONLY inside the package — the 21 skills
+  are registered from `ASSET_SKILLS` with `resourceBase` pointing there
+  (verified on a fresh project: no skills/agents/AGENTS.md created).
+- All 21 skills are `userInvocable:false` (model-only); nothing reaches `/`.
+- 3 literal `.dsh/skills/Humanizer-zh/SKILL.md` reads changed to
+  `use_skill humanizer-zh` (zero downgrade after the white-list switch).
+- Old `.dsh/` work copies and checkpoints are left untouched (Q11/Q18).
+- Tests rewritten for the panel form: **10/10 suites, 273/273 assertions**.
+- Live: boot graph contains `@yousen/dsh-novel-mode` client row; preset gone;
+  `/novel/api` returns structured state; white-list materialization exact.
+
 ## 版本策略（2026-11-11 起）
 
 本插件**尚未发布 `1.0.0` 正式版**。最初建包时把起始号定成了 `2.0.0`，这是
 一个未经语义考量、也未经确认的历史决定：一个刚发布两天、仍在修安装布局的
 插件不应凭空宣称跨过两个大版本。经确认后**重开 `0.x` 打磨线**：
 
-- **当前版本 `0.2.0`** = 打磨期版本，等价于「功能齐备、待真实使用验收」。
+- **当前版本 `0.3.0`**（panel-only 形态）= 打磨期版本，等价于「功能齐备、待真实使用验收」。
 - `2.0.0 / 2.0.1 / 2.1.0 / 2.1.1` 四个 Release 与对应 git tag **已删除**
   （经确认后清理，不再保留任何 2.x 发布物）。下方 2.x 章节仅作为开发
   过程记录保留文字，不再对应任何可下载/可安装的发布物。
 - 待 **AC-38**（真模型连续写多章 + 全书 `validate-chapter -Chapter All` PASS）
-  与 **AC-45**（全新独立 profile + 人工可视化点选下拉框）两项真实使用验收
-  完成后，发布 **`1.0.0`** 作为首个正式稳定版，之后按标准 SemVer 迭代。
+  与 **AC-45**（全新独立 profile 里侧栏出现「小说」入口 → 点开「小说工作台」
+  面板 → 走完「启动 → 选开始方式 → 首章」）两项真实使用验收完成后，发布
+  **`1.0.0`** 作为首个正式稳定版，之后按标准 SemVer 迭代。
 - 注意：SemVer 是单调的，`0.x` 在版本比较上小于 `2.1.1`。通过自托管
   format-1 索引装过 2.1.1 的用户会看到一次**版本号回退**；官方目录
   [PR #13689](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689)
