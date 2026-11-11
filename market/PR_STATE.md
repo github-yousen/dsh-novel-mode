@@ -1,4 +1,6 @@
-# 市场投稿状态（2026-11-11 01:51 +08 最终复核）
+# 市场投稿状态（2026-11-11 19:50 +08 最终复核）
+
+> **已合并**：PR #13689 于 2026-11-10 18:32:30 UTC（北京时间 11/11 02:32）由上游维护者 `fkysly` 合并，merge commit `f415e5c`；站点 `plugins.json` 已收录（HTTP 200 / 12.5 MB / 含本条目）。合并时维护者按仓库实际行为重写了描述，并**移除了 `tarball:`**（站点改用 `github:github-yousen/dsh-novel-mode` 安装行）。详见下方「维护者反馈与 v2.1.1」。
 
 | 项目 | 值 |
 |---|---|
@@ -22,16 +24,17 @@
 
 仓库创建于 2026-11-09 14:44:55 UTC，2026-11-10 14:44:55 UTC 满 24h。此前 14:27:53 UTC 的失败判决（"repository is 1.0 days old"）是**门槛到达前的旧快照**；v2.0.1 阶段 15:27:45 UTC 首次转绿，v2.1.0 catalog 推送（head `8eb60cc`）再次触发 `PR check` → gate 重算，**17:50:46 UTC 最终判决同样 SUCCESS**。两次独立通道（后台轮询 + 直接 API 读取）结论逐字一致。详见 [REVIEW-publication.md](../docs/REVIEW-publication.md)。
 
-## 「成功推送到市场」的判定
+## 「成功推送到市场」的判定（全部 ✅）
 
-- ✅ **正式发布 + 可安装分发**：Release v2.1.0 附预构建 tarball（470995 B），可从 Release 或仓库 URL 直接安装；已验证 tarball 含 `lib/orchestrator.js`、21 技能、18 脚本、8 模板、2 PNG，零凭据。
-- ✅ **进入可被 DSH 市场读取的索引**：自托管 format-1 索引已公开、format 合法、HTTP 200、版本 2.1.0，`plugin_market` Discover 可添加。这是完全自控、已验证成功的市场渠道。
-- ✅ **官方精选目录 CI 全绿**：PR #13689 的 `check` 与 `Submission gate` 均 success，1 个 YAML 文件，无年龄/清单/格式问题。
-- ⏳ **仅剩维护者合并**：PR 仍 `open / merged=false`，人工评审与合并由上游维护者决定，插件无法强制。合并后站点自动重建，`awesome-dsh-plugin.com/plugins.json` 与 `dsh-plugin-catalog` 更新，dshmarket 通常一天内收录。
+- ✅ **正式发布 + 可安装分发**：Release **v2.1.1** 附 pnpm-safe 预构建 tarball（471373 B，每个条目带 `package/` 外壳）；另有 v2.1.0 / v2.0.1 / v2.0.0 历史 Release。
+- ✅ **进入可被 DSH 市场读取的索引**：自托管 format-1 索引已公开、HTTP 200、版本 **2.1.1**，`plugin_market` Discover 可添加。
+- ✅ **官方精选目录 CI 全绿**：PR #13689 的 `check` 与 `Submission gate` 均 success。
+- ✅ **官方目录已合并并收录**：`merged=true`，`awesome-dsh-plugin.com/plugins.json` HTTP 200 且含本条目（站点改用 `github:` 安装行，不依赖 tarball）。
 
-## 剩下的（维护者侧）
+## 维护者反馈与 v2.1.1（2026-11-11）
 
-- 上游人工评审 → 合并 → 站点重建 → dshmarket 同步。
-- 若被打 `held: author`：把修复推到同一分支并只留一条评论；标签需重新评审才摘掉。
+维护者 `fkysly` 合并时指出：v2.1.0 的 Release tarball 是**根布局**（文件直接放压缩包根），pnpm 解包会砍掉第一段路径把子目录压平（`lib/x.js` → `x.js`），导致从 tarball 安装时入口之外的文件找不到。因此合并时移除了条目里的 `tarball:`，并给出了精确修法：`make-tarball.py` 的 `arcname="package/" + rel`。
+
+**已修复并发布 v2.1.1**：`make-tarball.py` 现在给全部 111 个条目加单一 `package/` 前缀并断言无遗漏；`manifest.test.mjs` 加了防回归测试；真实下载已发布 tarball 验证 `111/111` 带前缀、`lib/`/`assets/`/`locale/` 子目录完整；全套 10/10 suites、298/298 断言。站点 `github:` 安装路径本来就不受影响。
 
 > 具体 commit SHA 以仓库 `main` 分支为准；format-1 索引钉在已发布代码 commit，避免追 HEAD 造成漂移。
