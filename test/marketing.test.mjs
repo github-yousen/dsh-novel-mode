@@ -96,16 +96,15 @@ check('no stale "adds a button / slash command / prompt injection" claims in mar
     for (const re of STALE_CLAIM_PATTERNS) noMatch(stripped, re, `stale claim in ${rel}`);
   }
 });
-check('marketing describes the UI as ONLY the mode dropdown (no extra button/command surface)', () => {
+check('marketing describes the UI as ONE sidebar entry + ONE panel (no mode dropdown / button / command)', () => {
   const en = texts['README.md'] || '';
   const zh = texts['README.zh.md'] || '';
-  // Current copy: "Select 小说模式 in the session's mode dropdown. That is the
-  // entire UI." — the semantic equivalent of "no custom button/command".
-  match(en, /mode dropdown/i, 'README en names the mode dropdown');
-  match(en, /That is the entire UI|The entire UI/i, 'README en: dropdown is the entire UI');
+  // Panel-only form (Q6): the mode dropdown is gone.
+  noMatch(en, /mode dropdown/i, 'README en must NOT mention a mode dropdown');
+  noMatch(zh, /模式下拉框/, 'README zh must NOT mention a mode dropdown');
+  match(en, /sidebar entry|小说工作台 panel|Novel Workbench/i, 'README en names the sidebar entry / panel');
+  match(zh, /侧栏|小说工作台|面板/, 'README zh names the sidebar entry / panel');
   match(en, /no prompt text shown|no errors leaked/i, 'README en: no prompt/error surface');
-  match(zh, /模式下拉框/, 'README zh names the mode dropdown');
-  match(zh, /整个 UI/, 'README zh: dropdown is the entire UI');
   match(zh, /不展示提示词|不外泄错误/, 'README zh: no prompt/error surface');
 });
 check('PR body states no persona / no prompt dump surface', () => {
