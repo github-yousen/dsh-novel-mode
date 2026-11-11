@@ -31,7 +31,7 @@ pwsh -NoProfile -File .dsh/scripts/export-design-context.ps1 -Chapter N
 
 ### 2. 附加去AI味规则
 
-🔴 **将 humanizer-zh 技能规则并入导出文件**：读取 `.dsh/skills/Humanizer-zh/SKILL.md`（如文件存在），将其中「核心规则速查 / 内容模式 / 语言和语法模式 / 快速检查清单 / 质量评分」要点以「## 去AI味规则（外部 LLM 写作时必须遵守）」小节**追加到 `novel/chapters/[NNN]/design-export.md` 末尾**，确保外部 LLM 写作时自动按该规则执行；文件不存在则跳过并提示用户。
+🔴 **将 humanizer-zh 技能规则并入导出文件**：用 `use_skill humanizer-zh` 加载技能内容，将其中「核心规则速查 / 内容模式 / 语言和语法模式 / 快速检查清单 / 质量评分」要点以「## 去AI味规则（外部 LLM 写作时必须遵守）」小节**追加到 `novel/chapters/[NNN]/design-export.md` 末尾**，确保外部 LLM 写作时自动按该规则执行。
 
 ### 3. 提示下一步
 
