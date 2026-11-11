@@ -314,7 +314,7 @@ check('PM-M1: no version-bearing surface still advertises an OLD current version
   match(cl, /尚未发布 `1\.0\.0` 正式版/, 'CHANGELOG states 1.0.0 is not yet released');
   match(cl, /AC-38/, 'CHANGELOG names the AC-38 gate for 1.0.0');
   match(cl, /AC-45/, 'CHANGELOG names the AC-45 gate for 1.0.0');
-  match(cl, /2\.0\.0 \/ 2\.0\.1 \/ 2\.1\.0 \/ 2\.1\.1/, 'CHANGELOG preserves the 2.x history tags');
+  match(cl, /四个 Release 与对应 git tag \*\*已删除\*\*/, 'CHANGELOG records the 2.x Release/tag deletion');
 });
 check('engines.dsh in catalog/index matches package.json', () => {
   const idx = readJson(join(ROOT, 'market/index-snippet.json'));
