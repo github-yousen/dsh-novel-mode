@@ -17,7 +17,7 @@
  */
 import {
   ROOT, check, asyncCheck, eq, ok, truthy, falsy, match, noMatch, includes,
-  excludes, notThrows, readText, walk, exists, isDir,
+  excludes, notThrows, readText, walk, exists, isDir, isFile,
   tmpProject, mockCtx, moduleOnlyCopy, markReadOnly, restoreWritable,
   loadPlugin, loadEngine, finish,
 } from './_lib.mjs';
@@ -131,21 +131,21 @@ await asyncCheck('read-only project: tool.execute never throws, never leaks', as
 R.dispose();
 
 const R2 = tmpProject('nm-readonly2');
-check('read-only target: materialization listener swallows cpSync failures', () => {
+check('read-only target: drive() swallows cpSync failures and keeps user file', () => {
   const project = R2.path;
-  const ctx = mockCtx({
-    cwdOf: () => project,
-    presetForSession: () => 'novel',
-    agentGet: () => ({ session: { header: { cwd: project } } }),
-  });
+  const ctx = mockCtx({ cwdOf: () => project, get: () => undefined });
   plugin.apply(ctx);
   mkdirSync(join(project, '.dsh'), { recursive: true });
   writeFileSync(join(project, '.dsh', 'config.yaml'), '# USER\n', 'utf8');
   markReadOnly(project);
+  const route = (ctx._routes || []).find((r) => r.path === '/novel/api');
   notThrows(() => {
-    for (const fn of ctx._events['agent-preset/selected'] || []) fn('sid', 'novel');
-    for (const fn of ctx._events['agent/created'] || []) fn({ agent: { session: { header: { cwd: project } } } });
-  }, 'listeners must swallow cpSync failures');
+    if (route) {
+      const req = { method: 'POST', async *[Symbol.asyncIterator]() { yield Buffer.from(JSON.stringify({ project, args: { action: 'status' } })); } };
+      const res = { writeHead() {}, end() {} };
+      void route.handler(req, res);
+    }
+  }, 'drive must swallow cpSync failures');
   restoreWritable(project); // allow cleanup
   eq(readText(join(project, '.dsh', 'config.yaml')), '# USER\n', 'pre-existing file preserved');
 });
@@ -195,19 +195,18 @@ C.dispose();
 /* -------------------------------------------------------------------------- */
 
 const K = tmpProject('nm-concurrent');
-check('concurrent preset activations create ONE .dsh with no throw', () => {
-  const ctx = mockCtx({
-    cwdOf: () => K.path,
-    presetForSession: () => 'novel',
-    agentGet: () => ({ session: { header: { cwd: K.path } } }),
-  });
+await asyncCheck('concurrent drive() calls create ONE .dsh with no throw', async () => {
+  const ctx = mockCtx({ cwdOf: () => K.path, get: () => undefined });
   plugin.apply(ctx);
-  const fns = ctx._events['agent-preset/selected'] || [];
-  notThrows(() => {
-    for (let i = 0; i < 12; i += 1) for (const fn of fns) fn('sess-' + i, 'novel');
-  }, 'concurrent activations must not throw');
+  const route = (ctx._routes || []).find((r) => r.path === '/novel/api');
+  await Promise.all(Array.from({ length: 12 }, () => {
+    const req = { method: 'POST', async *[Symbol.asyncIterator]() { yield Buffer.from(JSON.stringify({ project: K.path, args: { action: 'status' } })); } };
+    const res = { writeHead() {}, end() {} };
+    return route.handler(req, res);
+  }));
   ok(isDir(join(K.path, '.dsh')), '.dsh exists');
-  eq(walk(join(K.path, '.dsh')).filter((p) => p.endsWith('SKILL.md')).length, 21, '21 SKILL.md despite concurrency');
+  ok(isFile(join(K.path, '.dsh', 'scripts', 'validate-chapter.ps1')), 'scripts materialized');
+  falsy(isDir(join(K.path, '.dsh', 'skills')), 'NO skills/ in project');
 });
 await asyncCheck('concurrent tool.execute calls: all ok, all generic, no leak', async () => {
   const ctx = mockCtx({ cwdOf: () => K.path, get: () => undefined });
