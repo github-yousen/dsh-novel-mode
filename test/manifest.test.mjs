@@ -31,9 +31,12 @@ check('dsh.bundle.patch points at ./cordis.patch.yml (required by market CI)', (
   eq(pkg.dsh?.bundle?.patch, './cordis.patch.yml');
   ok(isFile(join(ROOT, 'cordis.patch.yml')), 'patch file exists');
 });
-check('NO dsh.client (Host-only bundle) and NO dsh.* extras beyond bundle', () => {
-  falsy('client' in (pkg.dsh || {}), 'dsh.client must be absent');
-  deepEq(Object.keys(pkg.dsh).sort(), ['bundle'], 'dsh has only bundle');
+check('dsh.client declares the Web Client half (panel-only form)', () => {
+  ok('client' in (pkg.dsh || {}), 'dsh.client must be present');
+  eq(pkg.dsh.client.platform, 'web');
+  ok(Array.isArray(pkg.dsh.client.inject) && pkg.dsh.client.inject.length >= 1, 'client inject list');
+  eq(pkg.exports?.['./client'], './client.js', './client export');
+  ok(isFile(join(ROOT, 'client.js')), 'client.js exists');
 });
 check('engines.dsh is declared and is a valid range', () => {
   const e = pkg.engines?.dsh;
@@ -107,89 +110,32 @@ check('cordis.patch.yml parses with js-yaml + !!js Type registered', () => {
   ok(Array.isArray(patch) && patch.length >= 1, 'top-level array');
   ok(patch[0].insert && Array.isArray(patch[0].insert), 'first item has insert:');
 });
-check('patch has exactly the expected rows: 1 Host + 1 agent-preset', () => {
+check('patch has EXACTLY ONE Host row (no agent preset / no mode dropdown)', () => {
   const rows = patch[0].insert;
-  eq(rows.length, 2, 'two rows');
+  eq(rows.length, 1, 'single row');
   eq(rows[0].id, 'novel-mode');
   eq(rows[0].name, '@yousen/dsh-novel-mode');
-  eq(rows[1].id, 'preset-novel');
-  eq(rows[1].name, '@deepseek-ai/dsh-agent-preset');
 });
-check('preset row: id=novel, name=小说模式, has description + order + plugins', () => {
-  const cfg = patch[0].insert[1].config;
-  eq(cfg.id, 'novel');
-  eq(cfg.name, '小说模式');
-  ok(typeof cfg.description === 'string' && cfg.description.length > 0);
-  ok(Number.isInteger(cfg.order), 'order integer');
-  ok(Array.isArray(cfg.plugins) && cfg.plugins.length > 0, 'plugins list');
-});
-check('preset has NO persona / prompt-injection rows (lead rearchitecture)', () => {
-  const rows = patch[0].insert[1].config.plugins;
+check('patch declares NO preset / persona / prompt-injection / client row', () => {
   const text = patchText;
-  // No persona plugin row.
-  falsy(rows.some((r) => r.id === 'persona' || /dsh-persona/.test(r.name || '')), 'no persona row');
-  // No persona prefix/suffix config (prompt dump).
+  excludes(text, 'dsh-agent-preset', 'no agent preset row');
+  excludes(text, '小说模式', 'no mode-display name in patch');
   excludes(text, 'prefix:', 'no persona prefix');
   excludes(text, 'suffix:', 'no persona suffix');
-  // No system-prompt section / injected workflow brief.
-  excludes(text, 'systemPrompt', 'no systemPrompt section');
-  excludes(text, '你正处于「小说模式」', 'no workflow prompt dump');
+  excludes(text, '你正处于', 'no workflow prompt dump');
   excludes(text, 'prompt injection', 'no prompt injection');
 });
-check('!!js custom tags parse as STRINGS (not evaluated, not thrown)', () => {
-  const rows = patch[0].insert[1].config.plugins;
-  const jsRows = rows.filter((r) => typeof r.disabled === 'string');
-  eq(jsRows.length, 2, 'two !!js disabled rows');
-  for (const r of jsRows) {
-    ok(r.disabled.startsWith('process.platform'), `!!js kept as source string: ${r.disabled}`);
-    excludes(r.disabled, 'undefined');
-  }
-});
-check('platform gating: bash disabled on win32, pwsh disabled elsewhere', () => {
-  const rows = patch[0].insert[1].config.plugins;
-  const bash = rows.find((r) => r.id === 'tool-bash');
-  const pwsh = rows.find((r) => r.id === 'tool-pwsh');
-  eq(bash.disabled, "process.platform === 'win32'");
-  eq(pwsh.disabled, "process.platform !== 'win32'");
-});
-check('preset wires the standard tool set (file/shell/skill/subagent/web/...)', () => {
-  const ids = patch[0].insert[1].config.plugins.map((r) => r.id);
-  for (const id of ['tool-fs', 'tool-pwsh', 'tool-skill', 'tool-web', 'tool-todo', 'present']) {
-    ok(ids.includes(id), `missing tool ${id}`);
-  }
-  ok(ids.includes('delegation'), 'delegation group for subagents');
-});
-check('preset carries NO custom button / command / tool contribution', () => {
-  const text = patchText;
-  excludes(text, 'dsh.client', 'no client half');
-  excludes(text, 'slots.register', 'no UI slot button');
-  excludes(text, 'command: novel', 'no slash command');
-});
 check('every patch row has id + name; no duplicate ids', () => {
-  const rows = patch[0].insert[1].config.plugins;
-  const allIds = [patch[0].insert[0].id, patch[0].insert[1].id, ...rows.map((r) => r.id)];
+  const rows = patch[0].insert;
+  const allIds = rows.map((r) => r.id);
   eq(new Set(allIds).size, allIds.length, 'duplicate row ids');
   for (const r of rows) {
     ok(typeof r.id === 'string' && r.id.length > 0, 'row id');
     ok(typeof r.name === 'string' && r.name.length > 0, 'row name');
   }
 });
-check('preset rows use resolvable package names (no unresolvable subpath exports)', () => {
-  // R7 regression: '@deepseek-ai/dsh-tool-subagent-control/list-agents' made the
-  // whole preset `broken` ("never started"), so the mode was filtered OUT of the
-  // dropdown by presetOptions(). The control-plane rows are not needed by the
-  // novel workflow — only the subagent dispatch tool is.
-  const collect = (rows) => rows.flatMap((r) => {
-    const nested = Array.isArray(r.config) ? collect(r.config) : [];
-    return [r.name, ...nested];
-  });
-  const names = collect(patch[0].insert[1].config.plugins).filter(Boolean);
-  for (const bad of ['@deepseek-ai/dsh-tool-subagent-control', '@deepseek-ai/dsh-tool-subagent-control/list-agents', '@deepseek-ai/dsh-tool-subagent-control/']) {
-    excludes(names.join('\n'), bad, `preset must not reference unresolvable ${bad}`);
-  }
-  // Every referenced package must be a plain @deepseek-ai/dsh-* name (single
-  // package), not a deep subpath that may not have an export in every build.
-  for (const n of names) {
+check('patch references no unresolvable deep subpath package', () => {
+  for (const n of patch[0].insert.map((r) => r.name).filter(Boolean)) {
     ok(!/^@deepseek-ai\/dsh-[^/]+\/.+/.test(n), `no deep subpath package: ${n}`);
   }
 });
