@@ -5,10 +5,10 @@
 | 项目 | 值 |
 |---|---|
 | 插件开源仓库 | https://github.com/github-yousen/dsh-novel-mode （Public, `main`, MIT, topic `dsh-plugin`） |
-| 产品版本 | **v2.1.0 — 多方评审修复：真实工作流正确性 + 可用性**（PM R2 复评；引擎核心 R4 APPROVE-CONFIRMED 有效） |
-| **正式发布** | **GitHub Release [v2.1.0](https://github.com/github-yousen/dsh-novel-mode/releases/tag/v2.1.0)**，附预构建 `dsh-novel-mode.tgz`（470414 B）；另有历史 Release v2.0.1 / v2.0.0 |
-| **自控市场渠道** | **自托管 format-1 索引**：https://github-yousen.github.io/skills/dsh-plugin-index.json （HTTP 200，format 1，1 plugin `@yousen/dsh-novel-mode` **2.1.0**）— 由 `github-yousen/skills` 仓库 GitHub Pages 托管，用户可在 Plugins → Discover → Index sources 添加该 URL |
-| 官方精选目录 PR | **https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689** （**open**, 1 file, `check`=success, `Submission gate`=**SUCCESS**） |
+| 产品版本 | **v0.2.0 — 0.x 打磨线当前版本**（尚未发布 `1.0.0` 正式版；见 CHANGELOG「版本策略」。PM R3 APPROVE，U1–U8 全 PASS） |
+| **正式发布** | **GitHub Release [v0.2.0](https://github.com/github-yousen/dsh-novel-mode/releases/tag/v0.2.0)**（pnpm-safe `package/` tarball）；`2.x` 四个 Release 保留为历史不删除 |
+| **自控市场渠道** | **自托管 format-1 索引**：https://github-yousen.github.io/skills/dsh-plugin-index.json （HTTP 200，format 1，1 plugin `@yousen/dsh-novel-mode` **0.2.0**）— 由 `github-yousen/skills` 仓库 GitHub Pages 托管，用户可在 Plugins → Discover → Index sources 添加该 URL |
+| 官方精选目录 PR | **https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/13689** （**已合并 merged=true**，2026-11-10 18:32:30 UTC，1 file，`check`=success, `Submission gate`=**SUCCESS**；站点 `plugins.json` 已收录） |
 | Fork / 分支 | https://github.com/github-yousen/awesome-dsh-plugin @ `add-dsh-novel-mode` |
 
 ## 已自动完成
