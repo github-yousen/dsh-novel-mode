@@ -31,6 +31,12 @@ def wanted(rel):
 def main():
     if os.path.exists(OUT):
         os.remove(OUT)
+    # pnpm strips the FIRST path segment when extracting a tgz. A root-level
+    # layout therefore flattens every subdirectory (lib/x.js -> x.js) and the
+    # installed plugin cannot find its own files. npm/pnpm tarballs require a
+    # single top-level `package/` wrapper (upstream maintainer feedback on
+    # awesome-dsh-plugin PR #13689).
+    PREFIX = "package/"
     count = 0
     with tarfile.open(OUT, "w:gz") as tar:
         for dirpath, dirnames, filenames in os.walk(ROOT):
@@ -41,11 +47,14 @@ def main():
                 full = os.path.join(dirpath, name)
                 rel = os.path.relpath(full, ROOT).replace("\\", "/")
                 if wanted(rel):
-                    tar.add(full, arcname=rel)
+                    tar.add(full, arcname=PREFIX + rel)
                     count += 1
     with tarfile.open(OUT) as t:
         names = t.getnames()
-    print("wrote", OUT, "entries=", count)
+    assert names, "tarball is empty"
+    bad = [n for n in names if not n.startswith(PREFIX)]
+    assert not bad, f"entries without {PREFIX} prefix: {bad[:5]}"
+    print("wrote", OUT, "entries=", count, "prefix=", PREFIX)
     print("skills=", sum(1 for n in names if n.endswith("SKILL.md")))
     print("ps1=", sum(1 for n in names if n.endswith(".ps1")))
     print("png=", [n for n in names if n.endswith(".png")])
